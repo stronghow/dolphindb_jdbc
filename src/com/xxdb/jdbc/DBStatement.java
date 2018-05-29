@@ -18,7 +18,7 @@ public class DBStatement implements Statement {
     @Override
     public ResultSet executeQuery(String s) throws SQLException {
         try {
-            resultSet = new DBResultSet(connection.getDb().run(s),s);
+            resultSet = new DBResultSet(connection,connection.getDb().run(s),s);
             return resultSet;
         }catch (IOException e){
             e.printStackTrace();
@@ -101,7 +101,7 @@ public class DBStatement implements Statement {
     @Override
     public boolean execute(String s) throws SQLException {
         try {
-            resultSet = new DBResultSet(connection.getDb().run(s),s);
+            resultSet = new DBResultSet(connection,connection.getDb().run(s),s);
             return true;
         }catch (IOException e){
             e.printStackTrace();
