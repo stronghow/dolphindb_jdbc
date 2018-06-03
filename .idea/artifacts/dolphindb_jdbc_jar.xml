@@ -4,6 +4,7 @@
     <root id="archive" name="dolphindb-jdbc.jar">
       <element id="module-output" name="dolphindb-jdbc" />
       <element id="extracted-dir" path="$PROJECT_DIR$/lib/dolphindb.jar" path-in-jar="/" />
+      <element id="library" level="project" name="dolphindb" />
     </root>
   </artifact>
 </component>
