@@ -46,7 +46,7 @@ public class JDBCResultSet implements ResultSet{
 
     private boolean isClosed = false;
 
-    public JDBCResultSet(JDBCConnection conn, JDBCStatement statement, Entity entity, String sql) throws SQLException{
+    public JDBCResultSet(JDBCConnection conn, JDBCStatement statement, Entity entity, String columnLabelql) throws SQLException{
 
 //        if(entity.isVector()){
 //            List<String> colNames = new ArrayList<>(1);
@@ -66,7 +66,7 @@ public class JDBCResultSet implements ResultSet{
 //            int col = matrix.getColumnLabels().rows();
 //            int row = matrix.getRowLabels().rows();
 //            List<Vector> cols = new ArrayList<>(col+1);
-//            for(int i=0; i<col; ++i){
+//            for(int columnIndex=0; i<col; ++i){
 //                for(int j=0; j<row; ++j){
 //
 //                }
@@ -327,17 +327,17 @@ public class JDBCResultSet implements ResultSet{
     }
 
     @Override
-    public InputStream getAsciiStream(String s) throws SQLException {
+    public InputStream getAsciiStream(String columnLabel) throws SQLException {
         return null;
     }
 
     @Override
-    public InputStream getUnicodeStream(String s) throws SQLException {
+    public InputStream getUnicodeStream(String columnLabel) throws SQLException {
         return null;
     }
 
     @Override
-    public InputStream getBinaryStream(String s) throws SQLException {
+    public InputStream getBinaryStream(String columnLabel) throws SQLException {
         return null;
     }
 
@@ -453,14 +453,14 @@ public class JDBCResultSet implements ResultSet{
     }
 
     @Override
-    public boolean absolute(int i) throws SQLException {
-        row = i-1;
+    public boolean absolute(int columnIndex) throws SQLException {
+        row = columnIndex-1;
         return row < rows;
     }
 
     @Override
-    public boolean relative(int i) throws SQLException {
-        row += i;
+    public boolean relative(int columnIndex) throws SQLException {
+        row += columnIndex;
         return  row >= 0 && row < rows;
     }
 
@@ -471,7 +471,7 @@ public class JDBCResultSet implements ResultSet{
     }
 
     @Override
-    public void setFetchDirection(int i) throws SQLException {
+    public void setFetchDirection(int columnIndex) throws SQLException {
 
     }
 
@@ -481,7 +481,7 @@ public class JDBCResultSet implements ResultSet{
     }
 
     @Override
-    public void setFetchSize(int i) throws SQLException {
+    public void setFetchSize(int columnIndex) throws SQLException {
 
     }
 
@@ -594,22 +594,22 @@ public class JDBCResultSet implements ResultSet{
     }
 
     @Override
-    public void updateAsciiStream(int columnIndex, InputStream inputStream, int i1) throws SQLException {
+    public void updateAsciiStream(int columnIndex, InputStream inputStream, int columnIndex1) throws SQLException {
 
     }
 
     @Override
-    public void updateBinaryStream(int columnIndex, InputStream inputStream, int i1) throws SQLException {
+    public void updateBinaryStream(int columnIndex, InputStream inputStream, int columnIndex1) throws SQLException {
 
     }
 
     @Override
-    public void updateCharacterStream(int columnIndex, Reader reader, int i1) throws SQLException {
+    public void updateCharacterStream(int columnIndex, Reader reader, int columnIndex1) throws SQLException {
 
     }
 
     @Override
-    public void updateObject(int columnIndex, Object o, int i1) throws SQLException {
+    public void updateObject(int columnIndex, Object o, int columnIndex1) throws SQLException {
         update(columnIndex,o);
     }
 
@@ -659,7 +659,7 @@ public class JDBCResultSet implements ResultSet{
     }
 
     @Override
-    public void updateBigDecimal(String s, BigDecimal bigDecimal) throws SQLException {
+    public void updateBigDecimal(String columnLabel, BigDecimal bigDecimal) throws SQLException {
 
     }
 
@@ -689,22 +689,22 @@ public class JDBCResultSet implements ResultSet{
     }
 
     @Override
-    public void updateAsciiStream(String s, InputStream inputStream, int i) throws SQLException {
+    public void updateAsciiStream(String columnLabel, InputStream inputStream, int columnIndex) throws SQLException {
 
     }
 
     @Override
-    public void updateBinaryStream(String s, InputStream inputStream, int i) throws SQLException {
+    public void updateBinaryStream(String columnLabel, InputStream inputStream, int columnIndex) throws SQLException {
 
     }
 
     @Override
-    public void updateCharacterStream(String s, Reader reader, int i) throws SQLException {
+    public void updateCharacterStream(String columnLabel, Reader reader, int columnIndex) throws SQLException {
 
     }
 
     @Override
-    public void updateObject(String columnLabel, Object o, int i) throws SQLException {
+    public void updateObject(String columnLabel, Object o, int columnIndex) throws SQLException {
         update(columnLabel,o);
         
     }
@@ -792,22 +792,22 @@ public class JDBCResultSet implements ResultSet{
     }
 
     @Override
-    public Ref getRef(int i) throws SQLException {
+    public Ref getRef(int columnIndex) throws SQLException {
         return null;
     }
 
     @Override
-    public Blob getBlob(int i) throws SQLException {
+    public Blob getBlob(int columnIndex) throws SQLException {
         return null;
     }
 
     @Override
-    public Clob getClob(int i) throws SQLException {
+    public Clob getClob(int columnIndex) throws SQLException {
         return null;
     }
 
     @Override
-    public Array getArray(int i) throws SQLException {
+    public Array getArray(int columnIndex) throws SQLException {
         return null;
     }
 
@@ -817,22 +817,22 @@ public class JDBCResultSet implements ResultSet{
     }
 
     @Override
-    public Ref getRef(String s) throws SQLException {
+    public Ref getRef(String columnLabel) throws SQLException {
         return null;
     }
 
     @Override
-    public Blob getBlob(String s) throws SQLException {
+    public Blob getBlob(String columnLabel) throws SQLException {
         return null;
     }
 
     @Override
-    public Clob getClob(String s) throws SQLException {
+    public Clob getClob(String columnLabel) throws SQLException {
         return null;
     }
 
     @Override
-    public Array getArray(String s) throws SQLException {
+    public Array getArray(String columnLabel) throws SQLException {
         return null;
     }
 
@@ -872,67 +872,67 @@ public class JDBCResultSet implements ResultSet{
     }
 
     @Override
-    public URL getURL(String s) throws SQLException {
+    public URL getURL(String columnLabel) throws SQLException {
         return null;
     }
 
     @Override
-    public void updateRef(int i, Ref ref) throws SQLException {
+    public void updateRef(int columnIndex, Ref ref) throws SQLException {
 
     }
 
     @Override
-    public void updateRef(String s, Ref ref) throws SQLException {
+    public void updateRef(String columnLabel, Ref ref) throws SQLException {
 
     }
 
     @Override
-    public void updateBlob(int i, Blob blob) throws SQLException {
+    public void updateBlob(int columnIndex, Blob blob) throws SQLException {
 
     }
 
     @Override
-    public void updateBlob(String s, Blob blob) throws SQLException {
+    public void updateBlob(String columnLabel, Blob blob) throws SQLException {
 
     }
 
     @Override
-    public void updateClob(int i, Clob clob) throws SQLException {
+    public void updateClob(int columnIndex, Clob clob) throws SQLException {
 
     }
 
     @Override
-    public void updateClob(String s, Clob clob) throws SQLException {
+    public void updateClob(String columnLabel, Clob clob) throws SQLException {
 
     }
 
     @Override
-    public void updateArray(int i, Array array) throws SQLException {
+    public void updateArray(int columnIndex, Array array) throws SQLException {
 
     }
 
     @Override
-    public void updateArray(String s, Array array) throws SQLException {
+    public void updateArray(String columnLabel, Array array) throws SQLException {
 
     }
 
     @Override
-    public RowId getRowId(int i) throws SQLException {
+    public RowId getRowId(int columnIndex) throws SQLException {
         return null;
     }
 
     @Override
-    public RowId getRowId(String s) throws SQLException {
+    public RowId getRowId(String columnLabel) throws SQLException {
         return null;
     }
 
     @Override
-    public void updateRowId(int i, RowId rowId) throws SQLException {
+    public void updateRowId(int columnIndex, RowId rowId) throws SQLException {
 
     }
 
     @Override
-    public void updateRowId(String s, RowId rowId) throws SQLException {
+    public void updateRowId(String columnLabel, RowId rowId) throws SQLException {
 
     }
 
@@ -947,222 +947,222 @@ public class JDBCResultSet implements ResultSet{
     }
 
     @Override
-    public void updateNString(int i, String s) throws SQLException {
+    public void updateNString(int columnIndex, String columnLabel) throws SQLException {
 
     }
 
     @Override
-    public void updateNString(String s, String s1) throws SQLException {
+    public void updateNString(String columnLabel, String columnLabel1) throws SQLException {
 
     }
 
     @Override
-    public void updateNClob(int i, NClob nClob) throws SQLException {
+    public void updateNClob(int columnIndex, NClob nClob) throws SQLException {
 
     }
 
     @Override
-    public void updateNClob(String s, NClob nClob) throws SQLException {
+    public void updateNClob(String columnLabel, NClob nClob) throws SQLException {
 
     }
 
     @Override
-    public NClob getNClob(int i) throws SQLException {
+    public NClob getNClob(int columnIndex) throws SQLException {
         return null;
     }
 
     @Override
-    public NClob getNClob(String s) throws SQLException {
+    public NClob getNClob(String columnLabel) throws SQLException {
         return null;
     }
 
     @Override
-    public SQLXML getSQLXML(int i) throws SQLException {
+    public SQLXML getSQLXML(int columnIndex) throws SQLException {
         return null;
     }
 
     @Override
-    public SQLXML getSQLXML(String s) throws SQLException {
+    public SQLXML getSQLXML(String columnLabel) throws SQLException {
         return null;
     }
 
     @Override
-    public void updateSQLXML(int i, SQLXML sqlxml) throws SQLException {
+    public void updateSQLXML(int columnIndex, SQLXML sqlxml) throws SQLException {
 
     }
 
     @Override
-    public void updateSQLXML(String s, SQLXML sqlxml) throws SQLException {
+    public void updateSQLXML(String columnLabel, SQLXML sqlxml) throws SQLException {
 
     }
 
     @Override
-    public String getNString(int i) throws SQLException {
+    public String getNString(int columnIndex) throws SQLException {
         return null;
     }
 
     @Override
-    public String getNString(String s) throws SQLException {
+    public String getNString(String columnLabel) throws SQLException {
         return null;
     }
 
     @Override
-    public Reader getNCharacterStream(int i) throws SQLException {
+    public Reader getNCharacterStream(int columnIndex) throws SQLException {
         return null;
     }
 
     @Override
-    public Reader getNCharacterStream(String s) throws SQLException {
+    public Reader getNCharacterStream(String columnLabel) throws SQLException {
         return null;
     }
 
     @Override
-    public void updateNCharacterStream(int i, Reader reader, long l) throws SQLException {
+    public void updateNCharacterStream(int columnIndex, Reader reader, long l) throws SQLException {
 
     }
 
     @Override
-    public void updateNCharacterStream(String s, Reader reader, long l) throws SQLException {
+    public void updateNCharacterStream(String columnLabel, Reader reader, long l) throws SQLException {
 
     }
 
     @Override
-    public void updateAsciiStream(int i, InputStream inputStream, long l) throws SQLException {
+    public void updateAsciiStream(int columnIndex, InputStream inputStream, long l) throws SQLException {
 
     }
 
     @Override
-    public void updateBinaryStream(int i, InputStream inputStream, long l) throws SQLException {
+    public void updateBinaryStream(int columnIndex, InputStream inputStream, long l) throws SQLException {
 
     }
 
     @Override
-    public void updateCharacterStream(int i, Reader reader, long l) throws SQLException {
+    public void updateCharacterStream(int columnIndex, Reader reader, long l) throws SQLException {
 
     }
 
     @Override
-    public void updateAsciiStream(String s, InputStream inputStream, long l) throws SQLException {
+    public void updateAsciiStream(String columnLabel, InputStream inputStream, long l) throws SQLException {
 
     }
 
     @Override
-    public void updateBinaryStream(String s, InputStream inputStream, long l) throws SQLException {
+    public void updateBinaryStream(String columnLabel, InputStream inputStream, long l) throws SQLException {
 
     }
 
     @Override
-    public void updateCharacterStream(String s, Reader reader, long l) throws SQLException {
+    public void updateCharacterStream(String columnLabel, Reader reader, long l) throws SQLException {
 
     }
 
     @Override
-    public void updateBlob(int i, InputStream inputStream, long l) throws SQLException {
+    public void updateBlob(int columnIndex, InputStream inputStream, long l) throws SQLException {
 
     }
 
     @Override
-    public void updateBlob(String s, InputStream inputStream, long l) throws SQLException {
+    public void updateBlob(String columnLabel, InputStream inputStream, long l) throws SQLException {
 
     }
 
     @Override
-    public void updateClob(int i, Reader reader, long l) throws SQLException {
+    public void updateClob(int columnIndex, Reader reader, long l) throws SQLException {
 
     }
 
     @Override
-    public void updateClob(String s, Reader reader, long l) throws SQLException {
+    public void updateClob(String columnLabel, Reader reader, long l) throws SQLException {
 
     }
 
     @Override
-    public void updateNClob(int i, Reader reader, long l) throws SQLException {
+    public void updateNClob(int columnIndex, Reader reader, long l) throws SQLException {
 
     }
 
     @Override
-    public void updateNClob(String s, Reader reader, long l) throws SQLException {
+    public void updateNClob(String columnLabel, Reader reader, long l) throws SQLException {
 
     }
 
     @Override
-    public void updateNCharacterStream(int i, Reader reader) throws SQLException {
+    public void updateNCharacterStream(int columnIndex, Reader reader) throws SQLException {
 
     }
 
     @Override
-    public void updateNCharacterStream(String s, Reader reader) throws SQLException {
+    public void updateNCharacterStream(String columnLabel, Reader reader) throws SQLException {
 
     }
 
     @Override
-    public void updateAsciiStream(int i, InputStream inputStream) throws SQLException {
+    public void updateAsciiStream(int columnIndex, InputStream inputStream) throws SQLException {
 
     }
 
     @Override
-    public void updateBinaryStream(int i, InputStream inputStream) throws SQLException {
+    public void updateBinaryStream(int columnIndex, InputStream inputStream) throws SQLException {
 
     }
 
     @Override
-    public void updateCharacterStream(int i, Reader reader) throws SQLException {
+    public void updateCharacterStream(int columnIndex, Reader reader) throws SQLException {
 
     }
 
     @Override
-    public void updateAsciiStream(String s, InputStream inputStream) throws SQLException {
+    public void updateAsciiStream(String columnLabel, InputStream inputStream) throws SQLException {
 
     }
 
     @Override
-    public void updateBinaryStream(String s, InputStream inputStream) throws SQLException {
+    public void updateBinaryStream(String columnLabel, InputStream inputStream) throws SQLException {
 
     }
 
     @Override
-    public void updateCharacterStream(String s, Reader reader) throws SQLException {
+    public void updateCharacterStream(String columnLabel, Reader reader) throws SQLException {
 
     }
 
     @Override
-    public void updateBlob(int i, InputStream inputStream) throws SQLException {
+    public void updateBlob(int columnIndex, InputStream inputStream) throws SQLException {
 
     }
 
     @Override
-    public void updateBlob(String s, InputStream inputStream) throws SQLException {
+    public void updateBlob(String columnLabel, InputStream inputStream) throws SQLException {
 
     }
 
     @Override
-    public void updateClob(int i, Reader reader) throws SQLException {
+    public void updateClob(int columnIndex, Reader reader) throws SQLException {
 
     }
 
     @Override
-    public void updateClob(String s, Reader reader) throws SQLException {
+    public void updateClob(String columnLabel, Reader reader) throws SQLException {
 
     }
 
     @Override
-    public void updateNClob(int i, Reader reader) throws SQLException {
+    public void updateNClob(int columnIndex, Reader reader) throws SQLException {
 
     }
 
     @Override
-    public void updateNClob(String s, Reader reader) throws SQLException {
+    public void updateNClob(String columnLabel, Reader reader) throws SQLException {
 
     }
 
     @Override
-    public <T> T getObject(int i, Class<T> aClass) throws SQLException {
+    public <T> T getObject(int columnIndex, Class<T> aClass) throws SQLException {
         return null;
     }
 
     @Override
-    public <T> T getObject(String s, Class<T> aClass) throws SQLException {
+    public <T> T getObject(String columnLabel, Class<T> aClass) throws SQLException {
         return null;
     }
 
@@ -1260,27 +1260,27 @@ public class JDBCResultSet implements ResultSet{
         update(findColumn(name),value);
     }
 
-    private void update(int index, Object value) throws SQLException{
+    private void update(int columnIndex, Object value) throws SQLException{
         if(isInsert){
-            insert(index, value);
+            insert(columnIndex, value);
         }else{
             checkedClose();
             updateRow = row;
-            old_updateRowMap.put(index,table.getColumn(adjustColumnIndex(index)).get(row));
-            Vector vector = table.getColumn(adjustColumnIndex(index));
+            old_updateRowMap.put(columnIndex,table.getColumn(adjustColumnIndex(columnIndex)).get(row));
+            Vector vector = table.getColumn(adjustColumnIndex(columnIndex));
             if(value instanceof Scalar){
                 try {
-                    table.getColumn(adjustColumnIndex(index)).set(row, (Scalar)value);
+                    table.getColumn(adjustColumnIndex(columnIndex)).set(row, (Scalar)value);
                 }catch (Exception e){
                     throw new SQLException(e);
                 }
             }if (value instanceof Boolean) {
-                ((BasicBooleanVector) table.getColumn(adjustColumnIndex(index))).setBoolean(row, (boolean) value);
+                ((BasicBooleanVector) table.getColumn(adjustColumnIndex(columnIndex))).setBoolean(row, (boolean) value);
             } else if (value instanceof Byte) {
-                ((BasicByteVector) table.getColumn(adjustColumnIndex(index))).setByte(row, (byte) value);
+                ((BasicByteVector) table.getColumn(adjustColumnIndex(columnIndex))).setByte(row, (byte) value);
             } else if (value instanceof Character){
-                System.out.println(table.getColumn(adjustColumnIndex(index)).getClass().getName());
-                ((BasicByteVector) table.getColumn(adjustColumnIndex(index))).setByte(row, (byte) ((char)value & 0xFF));
+                System.out.println(table.getColumn(adjustColumnIndex(columnIndex)).getClass().getName());
+                ((BasicByteVector) table.getColumn(adjustColumnIndex(columnIndex))).setByte(row, (byte) ((char)value & 0xFF));
             }
             else if (value instanceof Integer) {
                 if(vector instanceof BasicLongVector){
@@ -1319,17 +1319,17 @@ public class JDBCResultSet implements ResultSet{
                     ((BasicDoubleVector) vector).setDouble(row,(double) value);
                 }
             } else if (value instanceof String) {
-                ((BasicStringVector) table.getColumn(adjustColumnIndex(index))).setString(row, (String) value);
+                ((BasicStringVector) table.getColumn(adjustColumnIndex(columnIndex))).setString(row, (String) value);
             } else if (value instanceof Date) {
-                updateDateTime(index, ((Date) value).toLocalDate());
+                updateDateTime(columnIndex, ((Date) value).toLocalDate());
             } else if (value instanceof Time) {
-                updateDateTime(index, ((Time) value).toLocalTime());
+                updateDateTime(columnIndex, ((Time) value).toLocalTime());
             } else if (value instanceof Timestamp) {
-                updateDateTime(index, ((Timestamp) value).toLocalDateTime());
+                updateDateTime(columnIndex, ((Timestamp) value).toLocalDateTime());
             } else {
-                updateDateTime(index,value);
+                updateDateTime(columnIndex,value);
             }
-            new_updateRowMap.put(index,table.getColumn(adjustColumnIndex(index)).get(row));
+            new_updateRowMap.put(columnIndex,table.getColumn(adjustColumnIndex(columnIndex)).get(row));
         }
     }
 
@@ -1338,37 +1338,37 @@ public class JDBCResultSet implements ResultSet{
     }
 
 
-    private void insert(int index, Object value) throws SQLException{
+    private void insert(int columnIndex, Object value) throws SQLException{
         checkedClose();
         insertRow = row;
         if(value instanceof Scalar){
-            insertRowMap.put(index,(Scalar) value);
+            insertRowMap.put(columnIndex,(Scalar) value);
         }else if(value instanceof Vector) {
-            insertRowMap.put(index,(Vector) value);
+            insertRowMap.put(columnIndex,(Vector) value);
         }else if(value instanceof Boolean){
-            insertRowMap.put(index,new BasicBoolean((boolean)value));
+            insertRowMap.put(columnIndex,new BasicBoolean((boolean)value));
         }else if(value instanceof Byte){
-            insertRowMap.put(index,new BasicByte((byte) value));
+            insertRowMap.put(columnIndex,new BasicByte((byte) value));
         }else if(value instanceof Integer){
-            insertRowMap.put(index,new BasicInt((int) value));
+            insertRowMap.put(columnIndex,new BasicInt((int) value));
         }else if(value instanceof Short){
-            insertRowMap.put(index,new BasicShort((short) value));
+            insertRowMap.put(columnIndex,new BasicShort((short) value));
         }else if(value instanceof Long){
-            insertRowMap.put(index,new BasicLong((long) value));
+            insertRowMap.put(columnIndex,new BasicLong((long) value));
         }else if(value instanceof Float){
-            insertRowMap.put(index,new BasicFloat((float) value));
+            insertRowMap.put(columnIndex,new BasicFloat((float) value));
         }else if(value instanceof Double){
-            insertRowMap.put(index,new BasicDouble((double) value));
+            insertRowMap.put(columnIndex,new BasicDouble((double) value));
         }else if(value instanceof String){
-            insertRowMap.put(index,new BasicString((String) value));
+            insertRowMap.put(columnIndex,new BasicString((String) value));
         }else if(value instanceof Date){
-            insertDateTime(index,((Date) value).toLocalDate());
+            insertDateTime(columnIndex,((Date) value).toLocalDate());
         }else if(value instanceof Time){
-            insertDateTime(index,((Time) value).toLocalTime());
+            insertDateTime(columnIndex,((Time) value).toLocalTime());
         }else if(value instanceof Timestamp){
-            insertDateTime(index,((Timestamp) value).toLocalDateTime());
+            insertDateTime(columnIndex,((Timestamp) value).toLocalDateTime());
         }else {
-            insertDateTime(index,value);
+            insertDateTime(columnIndex,value);
         }
     }
 
@@ -1377,8 +1377,8 @@ public class JDBCResultSet implements ResultSet{
         updateDateTime(findColumn(name),value);
     }
 
-    private void updateDateTime(int index, Object value) throws SQLException{
-        Vector vector = table.getColumn(adjustColumnIndex(index));
+    private void updateDateTime(int columnIndex, Object value) throws SQLException{
+        Vector vector = table.getColumn(adjustColumnIndex(columnIndex));
         if(value instanceof LocalDate){
             if(vector instanceof BasicDateVector){
                 ((BasicDateVector) vector).setDate(row,(LocalDate) value);
@@ -1412,33 +1412,33 @@ public class JDBCResultSet implements ResultSet{
         insertDateTime(findColumn(name),value);
     }
 
-    private void insertDateTime(int index, Object value) throws SQLException{
-        Vector vector = table.getColumn(adjustColumnIndex(index));
+    private void insertDateTime(int columnIndex, Object value) throws SQLException{
+        Vector vector = table.getColumn(adjustColumnIndex(columnIndex));
         if(value instanceof LocalDate){
             if(vector instanceof BasicDateVector){
-                insertRowMap.put(index,new BasicDate((LocalDate) value));
+                insertRowMap.put(columnIndex,new BasicDate((LocalDate) value));
             }
         }else if(value instanceof LocalTime){
             if(vector instanceof BasicTimeVector){
-                insertRowMap.put(index,new BasicTime((LocalTime) value));
+                insertRowMap.put(columnIndex,new BasicTime((LocalTime) value));
             } else if(vector instanceof BasicMinuteVector){
-                insertRowMap.put(index,new BasicMinute((LocalTime) value));
+                insertRowMap.put(columnIndex,new BasicMinute((LocalTime) value));
             }else if(vector instanceof BasicSecondVector){
-                insertRowMap.put(index,new BasicSecond((LocalTime) value));
+                insertRowMap.put(columnIndex,new BasicSecond((LocalTime) value));
             }else if(vector instanceof BasicNanoTime){
-                insertRowMap.put(index,new BasicNanoTime((LocalTime) value));
+                insertRowMap.put(columnIndex,new BasicNanoTime((LocalTime) value));
             }
         }else if(value instanceof LocalDateTime){
             if(vector instanceof BasicTimestampVector){
-                insertRowMap.put(index,new BasicTimestamp((LocalDateTime) value));
+                insertRowMap.put(columnIndex,new BasicTimestamp((LocalDateTime) value));
             }else if(vector instanceof BasicDateTimeVector){
-                insertRowMap.put(index,new BasicDateTime((LocalDateTime) value));
+                insertRowMap.put(columnIndex,new BasicDateTime((LocalDateTime) value));
             }else if(vector instanceof BasicNanoTimestampVector){
-                insertRowMap.put(index,new BasicNanoTimestamp((LocalDateTime) value));
+                insertRowMap.put(columnIndex,new BasicNanoTimestamp((LocalDateTime) value));
             }
         }else if(value instanceof YearMonth){
             if(vector instanceof BasicMonthVector){
-                insertRowMap.put(index,new BasicMonth((YearMonth) value));
+                insertRowMap.put(columnIndex,new BasicMonth((YearMonth) value));
             }
         }
     }

@@ -15,9 +15,9 @@ import java.util.Calendar;
 
 public class JDBCPrepareStatement extends JDBCStatement implements PreparedStatement {
 
-    public JDBCPrepareStatement(JDBCConnection conn, String sql){
-        super(conn);
-        this.connection = conn;
+    public JDBCPrepareStatement(JDBCConnection connection, String sql){
+        super(connection);
+        this.connection = connection;
         this.sql = sql.trim();
         sqlSplit = this.sql.split("\\?");
         values = new Object[sqlSplit.length+1];
@@ -35,9 +35,9 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
     }
 
     @Override
-    public void setNull(int i, int i1) throws SQLException {
+    public void setNull(int parameterIndex, int x) throws SQLException {
         super.checkClosed();
-        setObject(i,i1);
+        setObject(parameterIndex,x);
     }
 
 
@@ -84,53 +84,53 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
     }
 
     @Override
-    public void setBigDecimal(int parameterIndex, BigDecimal x) throws SQLException {
+    public void setBigDecimal(int parameterIndex, BigDecimal bigDecimal) throws SQLException {
         super.checkClosed();
-        setObject(parameterIndex,x);
+        setObject(parameterIndex,bigDecimal);
     }
 
     @Override
-    public void setString(int parameterIndex, String x) throws SQLException{
+    public void setString(int parameterIndex, String s) throws SQLException{
         super.checkClosed();
-        setObject(parameterIndex,x);
+        setObject(parameterIndex,s);
     }
 
     @Override
-    public void setBytes(int parameterIndex, byte[] x) throws SQLException{
+    public void setBytes(int parameterIndex, byte[] bytes) throws SQLException{
         super.checkClosed();
-        setObject(parameterIndex,x);
+        setObject(parameterIndex,bytes);
     }
 
     @Override
-    public void setDate(int parameterIndex, Date x) throws SQLException{
+    public void setDate(int parameterIndex, Date date) throws SQLException{
         super.checkClosed();
-        setObject(parameterIndex,x);
+        setObject(parameterIndex,date);
     }
 
     @Override
-    public void setTime(int parameterIndex, Time x) throws SQLException{
+    public void setTime(int parameterIndex, Time time) throws SQLException{
         super.checkClosed();
-        setObject(parameterIndex,x);
+        setObject(parameterIndex,time);
     }
 
     @Override
-    public void setTimestamp(int parameterIndex, Timestamp x) throws SQLException{
+    public void setTimestamp(int parameterIndex, Timestamp timestamp) throws SQLException{
         super.checkClosed();
-        setObject(parameterIndex,x);
+        setObject(parameterIndex,timestamp);
     }
 
     @Override
-    public void setAsciiStream(int parameterIndex, InputStream x, int length) throws SQLException{
+    public void setAsciiStream(int parameterIndex, InputStream inputStream, int length) throws SQLException{
 
 }
 
     @Override
-    public void setUnicodeStream(int parameterIndex, InputStream x, int length) throws SQLException{
+    public void setUnicodeStream(int parameterIndex, InputStream inputStream, int length) throws SQLException{
 
     }
 
     @Override
-    public void setBinaryStream(int parameterIndex, InputStream x, int length) throws SQLException{
+    public void setBinaryStream(int parameterIndex, InputStream inputStream, int length) throws SQLException{
 
     }
 
@@ -145,27 +145,27 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
 
 
     @Override
-    public void setObject(int parameterIndex, Object x) throws SQLException{
+    public void setObject(int parameterIndex, Object object) throws SQLException{
         super.checkClosed();
-        if(x instanceof Date){
-            values[parameterIndex] = new BasicDate(LocalDate.parse(x.toString()));
-        }else if(x instanceof Time){
-            values[parameterIndex] = new BasicTime(LocalTime.parse(x.toString()));
-        }else if(x instanceof Timestamp){
-            values[parameterIndex] = new BasicTimestamp(LocalDateTime.parse(x.toString()));
+        if(object instanceof Date){
+            values[parameterIndex] = new BasicDate(LocalDate.parse(object.toString()));
+        }else if(object instanceof Time){
+            values[parameterIndex] = new BasicTime(LocalTime.parse(object.toString()));
+        }else if(object instanceof Timestamp){
+            values[parameterIndex] = new BasicTimestamp(LocalDateTime.parse(object.toString()));
         }else{
-            values[parameterIndex] = x;
+            values[parameterIndex] = object;
         }
     }
 
     @Override
-    public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException {
-        setObject(parameterIndex,x);
+    public void setObject(int parameterIndex, Object object, int targetSqlType) throws SQLException {
+        setObject(parameterIndex,object);
     }
 
     @Override
-    public void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength) throws SQLException {
-        setObject(parameterIndex,x);
+    public void setObject(int parameterIndex, Object object, int targetSqlType, int scaleOrLength) throws SQLException {
+        setObject(parameterIndex,object);
     }
 
 
@@ -200,7 +200,7 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
     }
 
     @Override
-    public void setRef(int parameterIndex, Ref x) throws SQLException {
+    public void setRef(int parameterIndex, Ref ref) throws SQLException {
 
     }
 
@@ -225,18 +225,18 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
     }
 
     @Override
-    public void setDate(int parameterIndex, Date x, Calendar cal) throws SQLException{
-        setObject(parameterIndex,x);
+    public void setDate(int parameterIndex, Date date, Calendar cal) throws SQLException{
+        setObject(parameterIndex,date);
     }
 
     @Override
-    public void setTime(int parameterIndex, Time x, Calendar cal) throws SQLException{
-        setObject(parameterIndex,x);
+    public void setTime(int parameterIndex, Time time, Calendar cal) throws SQLException{
+        setObject(parameterIndex,time);
     }
 
     @Override
-    public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) throws SQLException{
-        setObject(parameterIndex,x);
+    public void setTimestamp(int parameterIndex, Timestamp timestamp, Calendar cal) throws SQLException{
+        setObject(parameterIndex,timestamp);
     }
 
     @Override
@@ -245,7 +245,7 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
     }
 
     @Override
-    public void setURL(int parameterIndex, URL x) throws SQLException{
+    public void setURL(int parameterIndex, URL url) throws SQLException{
 
     }
 
@@ -255,94 +255,94 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
     }
 
     @Override
-    public void setRowId(int parameterIndex, RowId x) throws SQLException{
+    public void setRowId(int parameterIndex, RowId rowId) throws SQLException{
 
     }
 
     @Override
-    public void setNString(int i, String s) throws SQLException {
+    public void setNString(int parameterIndex, String s) throws SQLException {
 
     }
 
     @Override
-    public void setNCharacterStream(int i, Reader reader, long l) throws SQLException {
+    public void setNCharacterStream(int parameterIndex, Reader reader, long l) throws SQLException {
 
     }
 
     @Override
-    public void setNClob(int i, NClob nClob) throws SQLException {
+    public void setNClob(int parameterIndex, NClob nClob) throws SQLException {
 
     }
 
     @Override
-    public void setClob(int i, Reader reader, long l) throws SQLException {
+    public void setClob(int parameterIndex, Reader reader, long l) throws SQLException {
 
     }
 
     @Override
-    public void setBlob(int i, InputStream inputStream, long l) throws SQLException {
+    public void setBlob(int parameterIndex, InputStream inputStream, long l) throws SQLException {
 
     }
 
     @Override
-    public void setNClob(int i, Reader reader, long l) throws SQLException {
+    public void setNClob(int parameterIndex, Reader reader, long l) throws SQLException {
 
     }
 
     @Override
-    public void setSQLXML(int i, SQLXML sqlxml) throws SQLException {
-
-    }
-
-
-    @Override
-    public void setAsciiStream(int i, InputStream inputStream, long l) throws SQLException {
-
-    }
-
-    @Override
-    public void setBinaryStream(int i, InputStream inputStream, long l) throws SQLException {
-
-    }
-
-    @Override
-    public void setCharacterStream(int i, Reader reader, long l) throws SQLException {
-
-    }
-
-    @Override
-    public void setAsciiStream(int i, InputStream inputStream) throws SQLException {
-
-    }
-
-    @Override
-    public void setBinaryStream(int i, InputStream inputStream) throws SQLException {
-
-    }
-
-    @Override
-    public void setCharacterStream(int i, Reader reader) throws SQLException {
-
-    }
-
-    @Override
-    public void setNCharacterStream(int i, Reader reader) throws SQLException {
-
-    }
-
-    @Override
-    public void setClob(int i, Reader reader) throws SQLException {
+    public void setSQLXML(int parameterIndex, SQLXML sqlxml) throws SQLException {
 
     }
 
 
     @Override
-    public void setBlob(int i, InputStream inputStream) throws SQLException {
+    public void setAsciiStream(int parameterIndex, InputStream inputStream, long l) throws SQLException {
 
     }
 
     @Override
-    public void setNClob(int i, Reader reader) throws SQLException {
+    public void setBinaryStream(int parameterIndex, InputStream inputStream, long l) throws SQLException {
+
+    }
+
+    @Override
+    public void setCharacterStream(int parameterIndex, Reader reader, long l) throws SQLException {
+
+    }
+
+    @Override
+    public void setAsciiStream(int parameterIndex, InputStream inputStream) throws SQLException {
+
+    }
+
+    @Override
+    public void setBinaryStream(int parameterIndex, InputStream inputStream) throws SQLException {
+
+    }
+
+    @Override
+    public void setCharacterStream(int parameterIndex, Reader reader) throws SQLException {
+
+    }
+
+    @Override
+    public void setNCharacterStream(int parameterIndex, Reader reader) throws SQLException {
+
+    }
+
+    @Override
+    public void setClob(int parameterIndex, Reader reader) throws SQLException {
+
+    }
+
+
+    @Override
+    public void setBlob(int parameterIndex, InputStream inputStream) throws SQLException {
+
+    }
+
+    @Override
+    public void setNClob(int parameterIndex, Reader reader) throws SQLException {
 
     }
 

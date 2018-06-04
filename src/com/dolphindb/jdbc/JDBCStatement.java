@@ -97,7 +97,7 @@ public class JDBCStatement implements Statement {
     }
 
     @Override
-    public void setMaxFieldSize(int i) throws SQLException {
+    public void setMaxFieldSize(int maxFieldSize) throws SQLException {
 
     }
 
@@ -107,7 +107,7 @@ public class JDBCStatement implements Statement {
     }
 
     @Override
-    public void setMaxRows(int i) throws SQLException {
+    public void setMaxRows(int maxRows) throws SQLException {
 
     }
 
@@ -122,7 +122,7 @@ public class JDBCStatement implements Statement {
     }
 
     @Override
-    public void setQueryTimeout(int i) throws SQLException {
+    public void setQueryTimeout(int queryTimeout) throws SQLException {
 
     }
 
@@ -142,15 +142,15 @@ public class JDBCStatement implements Statement {
     }
 
     @Override
-    public void setCursorName(String s) throws SQLException {
+    public void setCursorName(String cursorName) throws SQLException {
 
     }
 
     @Override
-    public boolean execute(String s) throws SQLException {
+    public boolean execute(String sql) throws SQLException {
         checkClosed();
         try {
-            String[] strings = s.split(";");
+            String[] strings = sql.split(";");
             System.out.println(strings.length);
             for(String item : strings){
                 if(item.length()>0){
@@ -181,7 +181,7 @@ public class JDBCStatement implements Statement {
             }
         }catch (Exception e){
             e.printStackTrace();
-            throw new SQLException("can not execute \n"+ s);
+            throw new SQLException(e);
         }
     }
 
@@ -232,7 +232,7 @@ public class JDBCStatement implements Statement {
     }
 
     @Override
-    public void setFetchDirection(int i) throws SQLException {
+    public void setFetchDirection(int fetchDirection) throws SQLException {
 
     }
 
@@ -242,7 +242,7 @@ public class JDBCStatement implements Statement {
     }
 
     @Override
-    public void setFetchSize(int i) throws SQLException {
+    public void setFetchSize(int fetchSize) throws SQLException {
 
     }
 
@@ -262,9 +262,9 @@ public class JDBCStatement implements Statement {
     }
 
     @Override
-    public void addBatch(String s) throws SQLException {
+    public void addBatch(String sql) throws SQLException {
         checkClosed();
-        batch.append(s).append("\n");
+        batch.append(sql).append("\n");
     }
 
     @Override
@@ -301,33 +301,33 @@ public class JDBCStatement implements Statement {
     }
 
     @Override
-    public int executeUpdate(String s, int i) throws SQLException {
-        return executeUpdate(s);
+    public int executeUpdate(String sql, int i) throws SQLException {
+        return executeUpdate(sql);
     }
 
     @Override
-    public int executeUpdate(String s, int[] ints) throws SQLException {
-        return executeUpdate(s);
+    public int executeUpdate(String sql, int[] ints) throws SQLException {
+        return executeUpdate(sql);
     }
 
     @Override
-    public int executeUpdate(String s, String[] strings) throws SQLException {
-        return executeUpdate(s);
+    public int executeUpdate(String sql, String[] strings) throws SQLException {
+        return executeUpdate(sql);
     }
 
     @Override
-    public boolean execute(String s, int i) throws SQLException {
-        return execute(s);
+    public boolean execute(String sql, int i) throws SQLException {
+        return execute(sql);
     }
 
     @Override
-    public boolean execute(String s, int[] ints) throws SQLException {
-        return execute(s);
+    public boolean execute(String sql, int[] ints) throws SQLException {
+        return execute(sql);
     }
 
     @Override
-    public boolean execute(String s, String[] strings) throws SQLException {
-        return execute(s);
+    public boolean execute(String sql, String[] strings) throws SQLException {
+        return execute(sql);
     }
 
     @Override
@@ -370,21 +370,21 @@ public class JDBCStatement implements Statement {
         return false;
     }
 
-    protected BasicInt tableInsert(String s) throws Exception{
-        if(s.startsWith("tableInsert")){
-            return (BasicInt)connection.getDbConnection().run(s);
+    protected BasicInt tableInsert(String sql) throws Exception{
+        if(sql.startsWith("tableInsert")){
+            return (BasicInt)connection.getDbConnection().run(sql);
         }else {
-            String tableName = s.substring(s.indexOf("into") + "into".length(), s.indexOf("values"));
+            String tableName = sql.substring(sql.indexOf("into") + "into".length(), sql.indexOf("values"));
             String values;
-            int index = s.indexOf(";");
+            int index = sql.indexOf(";");
             if (index == -1) {
-                values = s.substring(s.indexOf("values") + "values".length());
+                values = sql.substring(sql.indexOf("values") + "values".length());
             } else {
-                values = s.substring(s.indexOf("values") + "values".length(), s.indexOf(";"));
+                values = sql.substring(sql.indexOf("values") + "values".length(), sql.indexOf(";"));
             }
 
-            String sql = MessageFormat.format("tableInsert({0},{1})", tableName, values);
-            BasicInt n = (BasicInt) connection.getDbConnection().run(sql);
+            String new_sql = MessageFormat.format("tableInsert({0},{1})", tableName, values);
+            BasicInt n = (BasicInt) connection.getDbConnection().run(new_sql);
             return n;
         }
     }
