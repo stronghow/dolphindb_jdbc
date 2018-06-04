@@ -37,7 +37,7 @@ public class Main {
 
     private static final String path_data = "data/t1";
 
-    private static final String DB_URL = MessageFormat.format("jdbc:dolphindb://?databasePath={0}{1}",System.getProperty("user.dir").replaceAll("\\\\","/"),path_All);
+    private static final String DB_URL = MessageFormat.format("jdbc:dolphindb://localhost:8848?databasePath={0}{1}",System.getProperty("user.dir").replaceAll("\\\\","/"),path_All);
 
     private static final String DB_URL1 = "jdbc:dolphindb://";
     

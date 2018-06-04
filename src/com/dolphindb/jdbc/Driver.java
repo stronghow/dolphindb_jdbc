@@ -71,32 +71,54 @@ public class Driver implements java.sql.Driver {
         System.out.println(url);
         String old_url = url;
         url = url.trim().substring(URL_PREFIX.length());
-        if(url.length()==0){
+        if(url.length()==0||url.equals("?")){
             prop.setProperty("hostName","localhost");
             prop.setProperty("port","8848");
             return new JDBCConnection(prop);
         }else{
-            if(!url.contains("?"))  throw new SQLException(old_url + " is error\n we need ? like that jdbc:dolphindb://?databasePath= or jdbc:dolphindb://hostName:port?databasePath=");
-            if(url.startsWith("?")){
-                prop.setProperty("hostName", "localhost");
-                prop.setProperty("port", "8848");
-                String[] strings = url.split("\\?");
-                Utils.parseProperties(strings[1],prop,"&","=");
-            }else{
-                String[] strings = url.split("\\?");
-                String[] hostname_port = strings[0].split(":");
-                if(hostname_port.length ==2) {
-                    prop.setProperty("hostName", hostname_port[0]);
-                    prop.setProperty("port", hostname_port[1]);
-                }else{
-                    throw new SQLException("hostname_port " + strings[0] + " error");
+            String[] strings = url.split("\\?");
+            if(strings.length == 1){
+                String s = strings[0];
+                if(s.length() >0){
+                    if(s.contains("=")){
+                        prop.setProperty("hostName", "localhost");
+                        prop.setProperty("port", "8848");
+                        Utils.parseProperties(s,prop,"&","=");
+                    }else{
+                        String[] hostname_port = s.split(":");
+                        if(hostname_port.length ==2) {
+                            prop.setProperty("hostName", hostname_port[0]);
+                            prop.setProperty("port", hostname_port[1]);
+                        }else{
+                            throw new SQLException("hostname_port " + strings[0] + " error");
+                        }
+                    }
                 }
-                if(strings.length > 0){
-                    Utils.parseProperties(strings[1],prop,"&","=");
+            }else if(strings.length == 2){
+                String s1 = strings[0];
+                if(s1.length()>0){
+                    String[] hostname_port = s1.split(":");
+                    if(hostname_port.length ==2) {
+                        prop.setProperty("hostName", hostname_port[0]);
+                        prop.setProperty("port", hostname_port[1]);
+                    }else{
+                        throw new SQLException("hostname_port " + strings[0] + " error");
+                    }
+                }else{
+                    prop.setProperty("hostName", "localhost");
+                    prop.setProperty("port", "8848");
+                }
+                String s2 = strings[1];
+                if(s2.length()>0){
+                    Utils.parseProperties(s2,prop,"&","=");
                 }
             }
             return new JDBCConnection(prop);
         }
+    }
+
+    private void parseUrl(String url){
+
     }
 
     public static void unused(String s)throws SQLException{
