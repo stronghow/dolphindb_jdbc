@@ -17,6 +17,7 @@ public class Driver implements java.sql.Driver {
     private static final String URL_PREFIX = "jdbc:dolphindb://";
     public  static final String DB = "system_db";
     static int V=1,v=0;
+    private static final Logger  logger = Logger.getLogger("dolphindb");
     static {
         try {
             DriverManager.registerDriver(new Driver());
@@ -58,7 +59,7 @@ public class Driver implements java.sql.Driver {
 
     @Override
     public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-        return null;
+        return logger;
     }
 
     public static boolean isValidURL(String url) {
@@ -114,10 +115,6 @@ public class Driver implements java.sql.Driver {
             }
             return new JDBCConnection(prop);
         }
-    }
-
-    private void parseUrl(String url){
-
     }
 
     public static void unused(String s)throws SQLException{
