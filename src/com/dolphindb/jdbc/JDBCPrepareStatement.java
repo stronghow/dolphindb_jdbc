@@ -179,7 +179,7 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
     @Override
     public void addBatch() throws SQLException {
         super.checkClosed();
-        batch.append(createSql()).append("\n");
+        batch.append(createSql()).append(";\n");
 
     }
 
@@ -190,38 +190,38 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
 
     @Override
     public int[] executeBatch() throws SQLException {
-        //todo 需要修改
         return super.executeBatch();
     }
 
     @Override
     public void setCharacterStream(int parameterIndex, Reader reader, int length) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void setRef(int parameterIndex, Ref ref) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void setBlob(int parameterIndex, Blob blob) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void setClob(int parameterIndex, Clob clob) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void setArray(int parameterIndex, Array array) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public ResultSetMetaData getMetaData() throws SQLException {
-        return null;
+        checkClosed();
+        return resultSet.getMetaData();
     }
 
     @Override
@@ -241,109 +241,110 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
 
     @Override
     public void setNull(int parameterIndex, int sqlType, String typeName) throws SQLException{
-
+        Driver.unused();
     }
 
     @Override
     public void setURL(int parameterIndex, URL url) throws SQLException{
-
+        Driver.unused();
     }
 
     @Override
     public ParameterMetaData getParameterMetaData() throws SQLException {
-        return null;
+        Driver.unused();
+        return  null;
     }
 
     @Override
     public void setRowId(int parameterIndex, RowId rowId) throws SQLException{
-
+        Driver.unused();
     }
 
     @Override
     public void setNString(int parameterIndex, String s) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void setNCharacterStream(int parameterIndex, Reader reader, long l) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void setNClob(int parameterIndex, NClob nClob) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void setClob(int parameterIndex, Reader reader, long l) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void setBlob(int parameterIndex, InputStream inputStream, long l) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void setNClob(int parameterIndex, Reader reader, long l) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void setSQLXML(int parameterIndex, SQLXML sqlxml) throws SQLException {
-
+        Driver.unused();
     }
 
 
     @Override
     public void setAsciiStream(int parameterIndex, InputStream inputStream, long l) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void setBinaryStream(int parameterIndex, InputStream inputStream, long l) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void setCharacterStream(int parameterIndex, Reader reader, long l) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void setAsciiStream(int parameterIndex, InputStream inputStream) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void setBinaryStream(int parameterIndex, InputStream inputStream) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void setCharacterStream(int parameterIndex, Reader reader) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void setNCharacterStream(int parameterIndex, Reader reader) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void setClob(int parameterIndex, Reader reader) throws SQLException {
-
+        Driver.unused();
     }
 
 
     @Override
     public void setBlob(int parameterIndex, InputStream inputStream) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void setNClob(int parameterIndex, Reader reader) throws SQLException {
-
+        Driver.unused();
     }
 
     public void setBasicDate(int parameterIndex, LocalDate date) throws SQLException{

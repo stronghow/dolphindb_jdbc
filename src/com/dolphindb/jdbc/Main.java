@@ -14,12 +14,9 @@ import java.time.YearMonth;
 import java.util.HashMap;
 
 public class Main {
-    // JDBC 驱动名及数据库 URL
     private static final String JDBC_DRIVER = "com.dolphindb.jdbc.Driver";
 
     private static final String path_All = "/data/dballdata";
-
-    private static final String path_data = "data/t1";
 
     private static final String DB_URL = MessageFormat.format("jdbc:dolphindb://localhost:8848?databasePath={0}{1}",System.getProperty("user.dir").replaceAll("\\\\","/"),path_All);
 
@@ -179,20 +176,11 @@ public class Main {
         Connection conn = null;
         Statement stmt = null;
         try{
-            // 注册 JDBC 驱动
             Class.forName(JDBC_DRIVER);
-            // 打开链接
-            System.out.println("连接数据库...");
             conn = DriverManager.getConnection(url);
-
-            // 执行查询
-            System.out.println(" 实例化Statement对象...");
             stmt = conn.createStatement();
-
             ResultSet rs = null;
-
             int UpdateCount = -1;
-
             if(stmt.execute(sql)){
                 rs = stmt.getResultSet();
                 printData(rs);
@@ -202,7 +190,6 @@ public class Main {
                     System.out.println(UpdateCount + " row affected");
                 }
             }
-
             while (true){
                 if(stmt.getMoreResults()){
                     rs =  stmt.getResultSet();
@@ -219,21 +206,15 @@ public class Main {
             if(rs != null) {
                 rs.close();
             }
-            // 完成后关闭
             stmt.close();
             conn.close();
-        }catch(SQLException se){
-            // 处理 JDBC 错误
-            se.printStackTrace();
         }catch(Exception e){
-            // 处理 Class.forName 错误
             e.printStackTrace();
         }finally{
-            // 关闭资源
             try{
                 if(stmt!=null) stmt.close();
             }catch(SQLException se2){
-            }// 什么都不做
+            }
             try{
                 if(conn!=null) conn.close();
             }catch(SQLException se){
@@ -250,15 +231,8 @@ public class Main {
         Connection conn = null;
         PreparedStatement stmt = null;
         try{
-            // 注册 JDBC 驱动
             Class.forName("com.dolphindb.jdbc.Driver");
-
-            // 打开链接
-            System.out.println("连接数据库...");
             conn = DriverManager.getConnection(DB_URL);
-
-            // 执行查询
-            System.out.println(" 实例化Statement对象...");
             stmt = conn.prepareStatement(presql);
             stmt.execute(loadTable);
             int index = 1;
@@ -266,11 +240,8 @@ public class Main {
                 stmt.setObject(index,o);
                 ++index;
             }
-
             ResultSet rs = null;
-
             int UpdateCount = -1;
-
             if(stmt.execute()){
                 rs = stmt.getResultSet();
                 printData(rs);
@@ -298,18 +269,13 @@ public class Main {
             }
             stmt.close();
             conn.close();
-        }catch(SQLException se){
-            // 处理 JDBC 错误
-            se.printStackTrace();
         }catch(Exception e){
-            // 处理 Class.forName 错误
             e.printStackTrace();
         }finally{
-            // 关闭资源
             try{
                 if(stmt!=null) stmt.close();
             }catch(SQLException se2){
-            }// 什么都不做
+            }
             try{
                 if(conn!=null) conn.close();
             }catch(SQLException se){
@@ -325,17 +291,9 @@ public class Main {
         Connection conn = null;
         PreparedStatement stmt = null;
         try{
-            // 注册 JDBC 驱动
             Class.forName("com.dolphindb.jdbc.Driver");
-
-            // 打开链接
-            System.out.println("连接数据库...");
             conn = DriverManager.getConnection(DB_URL);
-
-            // 执行查询
-            System.out.println(" 实例化Statement对象...");
             stmt = conn.prepareStatement(bantchsql);
-
             stmt.execute(loadTable);
             for(int i=0; i<objects.length; ++i){
                 int index = 1;
@@ -346,29 +304,21 @@ public class Main {
                 }
                 stmt.addBatch();
             }
-
-
             stmt.executeBatch();
-
             ResultSet rs = stmt.executeQuery(select);
-
             printData(rs);
-            // 完成后关闭
             rs.close();
             stmt.close();
             conn.close();
         }catch(SQLException se){
-            // 处理 JDBC 错误
             se.printStackTrace();
         }catch(Exception e){
-            // 处理 Class.forName 错误
             e.printStackTrace();
         }finally{
-            // 关闭资源
             try{
                 if(stmt!=null) stmt.close();
             }catch(SQLException se2){
-            }// 什么都不做
+            }
             try{
                 if(conn!=null) conn.close();
             }catch(SQLException se){
@@ -380,64 +330,31 @@ public class Main {
 
     public static void TestResultSetUpdate(String loadTable,String select, int row, HashMap<Integer,Object> hashMap) throws Exception{
         System.out.println("TestResultSetUpdate begin");
-
         Connection conn = null;
         Statement stmt = null;
         try{
-            // 注册 JDBC 驱动
             Class.forName(JDBC_DRIVER);
-
-            // 打开链接
-            System.out.println("连接数据库...");
             conn = DriverManager.getConnection(DB_URL);
-
-            // 执行查询
-            System.out.println(" 实例化Statement对象...");
             stmt = conn.createStatement();
             stmt.execute(loadTable);
             ResultSet rs = stmt.executeQuery(select);
             rs.absolute(row);
-
             for (int key : hashMap.keySet()){
                 rs.updateObject(key,hashMap.get(key));
             }
-
             rs.updateRow();
             rs.beforeFirst();
-
-
-            //rs = stmt.executeQuery(select);
-
-            ResultSetMetaData resultSetMetaData = rs.getMetaData();
-            int len = resultSetMetaData.getColumnCount();
-            // 展开结果集数据库
-            while (rs.next()) {
-                // 通过字段检索
-
-                for (int i = 1; i <= len; ++i) {
-                    // 输出数据
-                    System.out.print(MessageFormat.format("{0}: {1},    ", resultSetMetaData.getColumnName(i), rs.getObject(i)));
-                }
-                System.out.print("\n");
-            }
+            printData(rs);
             rs.close();
-
-
-            // 完成后关闭
             stmt.close();
             conn.close();
-        }catch(SQLException se){
-            // 处理 JDBC 错误
-            se.printStackTrace();
         }catch(Exception e){
-            // 处理 Class.forName 错误
             e.printStackTrace();
         }finally{
-            // 关闭资源
             try{
                 if(stmt!=null) stmt.close();
             }catch(SQLException se2){
-            }// 什么都不做
+            }
             try{
                 if(conn!=null) conn.close();
             }catch(SQLException se){
@@ -453,21 +370,12 @@ public class Main {
         Connection conn = null;
         Statement stmt = null;
         try{
-            // 注册 JDBC 驱动
             Class.forName(JDBC_DRIVER);
-
-            // 打开链接
-            System.out.println("连接数据库...");
             conn = DriverManager.getConnection(DB_URL);
-
-            // 执行查询
-            System.out.println(" 实例化Statement对象...");
-            stmt = conn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
+            stmt = conn.createStatement();
             stmt.execute(loadTable);
             ResultSet rs = stmt.executeQuery(select);
-
             printData(rs);
-
             rs.absolute(2);
             rs.moveToInsertRow();
             int index = 1;
@@ -475,33 +383,21 @@ public class Main {
                 rs.updateObject(index,o);
                 ++index;
             }
-
             if(isInsert) {
                 rs.insertRow();
             }
-            //rs.cancelRowUpdates();
             rs.beforeFirst();
-
             printData(rs);
-
             rs.close();
-
-
-            // 完成后关闭
             stmt.close();
             conn.close();
-        }catch(SQLException se){
-            // 处理 JDBC 错误
-            se.printStackTrace();
         }catch(Exception e){
-            // 处理 Class.forName 错误
             e.printStackTrace();
         }finally{
-            // 关闭资源
             try{
                 if(stmt!=null) stmt.close();
             }catch(SQLException se2){
-            }// 什么都不做
+            }
             try{
                 if(conn!=null) conn.close();
             }catch(SQLException se){
@@ -517,21 +413,12 @@ public class Main {
         Connection conn = null;
         Statement stmt = null;
         try{
-            // 注册 JDBC 驱动
             Class.forName(JDBC_DRIVER);
-
-            // 打开链接
-            System.out.println("连接数据库...");
             conn = DriverManager.getConnection(DB_URL);
-
-            // 执行查询
-            System.out.println(" 实例化Statement对象...");
             stmt = conn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
             stmt.execute(loadTable);
             ResultSet rs = stmt.executeQuery(select);
-
             printData(rs);
-
             rs.absolute(2);
             int index = 1;
             for(Object o : objects){
@@ -541,29 +428,18 @@ public class Main {
             if(isUpdate) {
                 rs.updateRow();
             }
-            //rs.cancelRowUpdates();
             rs.beforeFirst();
-
             printData(rs);
-
             rs.close();
-
-
-            // 完成后关闭
             stmt.close();
             conn.close();
-        }catch(SQLException se){
-            // 处理 JDBC 错误
-            se.printStackTrace();
-        }catch(Exception e){
-            // 处理 Class.forName 错误
+        }catch (Exception e){
             e.printStackTrace();
         }finally{
-            // 关闭资源
             try{
                 if(stmt!=null) stmt.close();
             }catch(SQLException se2){
-            }// 什么都不做
+            }
             try{
                 if(conn!=null) conn.close();
             }catch(SQLException se){
@@ -579,15 +455,9 @@ public class Main {
         Connection conn = null;
         Statement stmt = null;
         try{
-            // 注册 JDBC 驱动
+
             Class.forName("com.dolphindb.jdbc.Driver");
-
-            // 打开链接
-            System.out.println("连接数据库...");
             conn = DriverManager.getConnection(DB_URL);
-
-            // 执行查询
-            System.out.println(" 实例化Statement对象...");
             stmt = conn.createStatement();
             stmt.execute(loadTable);
             ResultSet rs = stmt.executeQuery(select);
@@ -597,25 +467,16 @@ public class Main {
                 rs.deleteRow();
             }
             rs.beforeFirst();
-
             printData(rs);
-
-
-            // 完成后关闭
             stmt.close();
             conn.close();
-        }catch(SQLException se){
-            // 处理 JDBC 错误
-            se.printStackTrace();
         }catch(Exception e){
-            // 处理 Class.forName 错误
             e.printStackTrace();
         }finally{
-            // 关闭资源
             try{
                 if(stmt!=null) stmt.close();
             }catch(SQLException se2){
-            }// 什么都不做
+            }
             try{
                 if(conn!=null) conn.close();
             }catch(SQLException se){
@@ -628,12 +489,8 @@ public class Main {
     public static void printData(ResultSet rs) throws SQLException{
         ResultSetMetaData resultSetMetaData = rs.getMetaData();
         int len = resultSetMetaData.getColumnCount();
-        // 展开结果集数据库
         while (rs.next()) {
-            // 通过字段检索
-
             for (int i = 1; i <= len; ++i) {
-                // 输出数据
                 System.out.print(MessageFormat.format("{0}: {1},    ", resultSetMetaData.getColumnName(i), rs.getObject(i)));
             }
             System.out.print("\n");

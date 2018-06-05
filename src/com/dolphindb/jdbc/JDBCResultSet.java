@@ -28,7 +28,6 @@ public class JDBCResultSet implements ResultSet{
     private int row = -1;
     private int rows;
     private String tableName;
-    private String filePath;
 
     private HashMap<String,Integer> findColumnHashMap;
 
@@ -78,7 +77,6 @@ public class JDBCResultSet implements ResultSet{
         this.statement = statement;
         this.tableName = Utils.getTableName(sql);
         this.isUpdateable = Utils.isUpdateable(sql);
-        this.filePath = conn.getFilePath();
          if(entity.isTable()){
             this.table = (BasicTable) entity;
          }else{

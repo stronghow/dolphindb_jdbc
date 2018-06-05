@@ -21,7 +21,8 @@ public class JDBCStatement implements Statement {
     protected Object[] values;
     protected StringBuilder batch;
     protected Queue<Object> objectQueue;
-    protected  Object result;
+    protected Object result;
+    protected Deque<ResultSet> resultSets;
 
     protected boolean isClosed;
 
@@ -29,19 +30,20 @@ public class JDBCStatement implements Statement {
     public JDBCStatement(JDBCConnection cnn){
         this.connection = cnn;
         objectQueue = new LinkedList<>();
+        resultSets = new LinkedList<>();
     }
 
 
     @Override
-    public ResultSet executeQuery(String s) throws SQLException {
+    public ResultSet executeQuery(String sql) throws SQLException {
         checkClosed();
         try {
-            Entity entity = connection.getDbConnection().run(s);
+            Entity entity = connection.getDbConnection().run(sql);
             if(entity instanceof BasicTable){
-                resultSet = new JDBCResultSet(connection, this, entity, s);
+                resultSet = new JDBCResultSet(connection, this, entity, sql);
                 return resultSet;
             }else{
-                throw new SQLException("executeQuery can not create other than ResultSet");
+                throw new SQLException("the given SQL statement produces anything other than a single ResultSet object");
             }
         }catch (IOException e){
             e.printStackTrace();
@@ -50,20 +52,20 @@ public class JDBCStatement implements Statement {
     }
 
     @Override
-    public int executeUpdate(String s) throws SQLException {
+    public int executeUpdate(String sql) throws SQLException {
         checkClosed();
         try {
-             s = s.trim();
-             if(s.startsWith("tableInsert")){
-                 return tableInsert(s).getInt();
-             }else{
-                Entity entity = connection.getDbConnection().run(s);
+            sql = sql.trim();
+            if(sql.startsWith("tableInsert")){
+                return tableInsert(sql).getInt();
+            }else{
+                Entity entity = connection.getDbConnection().run(sql);
                 if(entity instanceof Void){
                     return 0;
                 }else if(entity instanceof BasicTable){
-                    throw new SQLException("executeUpdate can not create ResultSet");
+                    throw new SQLException("the given SQL statement produces a ResultSet object");
                 }else{
-                    // todo 等待 update delete api 返回更新行数
+                    // todo  update delete api return row
                     return 0;
                 }
             }
@@ -92,57 +94,61 @@ public class JDBCStatement implements Statement {
 
     @Override
     public int getMaxFieldSize() throws SQLException {
+        Driver.unused();
         return 0;
     }
 
     @Override
     public void setMaxFieldSize(int maxFieldSize) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public int getMaxRows() throws SQLException {
+        Driver.unused();
         return 0;
     }
 
     @Override
     public void setMaxRows(int maxRows) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void setEscapeProcessing(boolean b) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public int getQueryTimeout() throws SQLException {
+        Driver.unused();
         return 0;
     }
 
     @Override
     public void setQueryTimeout(int queryTimeout) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void cancel() throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public SQLWarning getWarnings() throws SQLException {
+        Driver.unused();
         return null;
     }
 
     @Override
     public void clearWarnings() throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void setCursorName(String cursorName) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
@@ -157,11 +163,13 @@ public class JDBCStatement implements Statement {
                     if(item.startsWith("insert") || item.startsWith("tableInsert")){
                         objectQueue.offer(tableInsert(item).getInt());
                     }else if(item.startsWith("update")||item.startsWith("delete")){
-                        //todo 获取更新计数
+                        //todo update delete api return row
                         connection.getDbConnection().run(item);
                     }else{
                         Entity entity = connection.getDbConnection().run(item);
                         if(entity instanceof  BasicTable){
+                            ResultSet resultSet_ = new JDBCResultSet(connection,this,entity,item);
+                            resultSets.offerLast(resultSet_);
                             objectQueue.offer(new JDBCResultSet(connection,this,entity,item));
                         }
                     }
@@ -215,9 +223,13 @@ public class JDBCStatement implements Statement {
 
     @Override
     public boolean getMoreResults() throws SQLException {
-        if(resultSet != null) {
-            resultSet.close();
+        while (!resultSets.isEmpty()){
+            ResultSet resultSet_ = resultSets.pollFirst();
+            if(resultSet_ != null){
+                resultSet_.close();
+            }
         }
+
         if(!objectQueue.isEmpty()){
             result = objectQueue.poll();
             if(result instanceof ResultSet){
@@ -232,38 +244,42 @@ public class JDBCStatement implements Statement {
 
     @Override
     public void setFetchDirection(int fetchDirection) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public int getFetchDirection() throws SQLException {
+        Driver.unused();
         return 0;
     }
 
     @Override
     public void setFetchSize(int fetchSize) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public int getFetchSize() throws SQLException {
+        Driver.unused();
         return 0;
     }
 
     @Override
     public int getResultSetConcurrency() throws SQLException {
+        Driver.unused();
         return 0;
     }
 
     @Override
     public int getResultSetType() throws SQLException {
+        Driver.unused();
         return 0;
     }
 
     @Override
     public void addBatch(String sql) throws SQLException {
         checkClosed();
-        batch.append(sql).append("\n");
+        batch.append(sql).append(";\n");
     }
 
     @Override
@@ -285,7 +301,7 @@ public class JDBCStatement implements Statement {
                     if(item.startsWith("insert") || item.startsWith("tableInsert")){
                         int_list.add(tableInsert(item).getInt());
                     }else if(item.startsWith("update")||item.startsWith("delete")){
-                        //todo 获取更新计数
+                        //todo update delete api return row
                         connection.getDbConnection().run(item);
                     }else{
                         Entity entity = connection.getDbConnection().run(item);
@@ -317,84 +333,115 @@ public class JDBCStatement implements Statement {
         return connection;
     }
 
+
     @Override
-    public boolean getMoreResults(int i) throws SQLException {
+    public boolean getMoreResults(int current) throws SQLException{
+        checkClosed();
+        switch (current){
+            case Statement.CLOSE_ALL_RESULTS:
+                while (!resultSets.isEmpty()){
+                    ResultSet resultSet_ = resultSets.pollLast();
+                    if(resultSet_ != null){
+                        resultSet_.close();
+                    }
+                }
+                break;
+            case Statement.CLOSE_CURRENT_RESULT:
+                if(resultSet != null){
+                    resultSet.close();
+                }
+                break;
+            case Statement.KEEP_CURRENT_RESULT:
+                break;
+                default:
+                throw new SQLException("the argument supplied is not one of the following:\n" +
+                        "Statement.CLOSE_CURRENT_RESULT,\n" +
+                        "Statement.KEEP_CURRENT_RESULTor\n" +
+                        " Statement.CLOSE_ALL_RESULTS");
+        }
         return false;
     }
 
     @Override
     public ResultSet getGeneratedKeys() throws SQLException {
+        Driver.unused();
         return null;
     }
 
     @Override
-    public int executeUpdate(String sql, int i) throws SQLException {
+    public int executeUpdate(String sql, int autoGeneratedKeys) throws SQLException{
         return executeUpdate(sql);
     }
 
     @Override
-    public int executeUpdate(String sql, int[] ints) throws SQLException {
+    public int executeUpdate(String sql, int[] columnIndexes) throws SQLException{
         return executeUpdate(sql);
     }
 
     @Override
-    public int executeUpdate(String sql, String[] strings) throws SQLException {
+    public int executeUpdate(String sql, String[] columnNames) throws SQLException{
         return executeUpdate(sql);
     }
 
     @Override
-    public boolean execute(String sql, int i) throws SQLException {
+    public boolean execute(String sql, int autoGeneratedKeys) throws SQLException{
         return execute(sql);
     }
 
     @Override
-    public boolean execute(String sql, int[] ints) throws SQLException {
+    public boolean execute(String sql, int[] columnIndexes) throws SQLException{
         return execute(sql);
     }
 
     @Override
-    public boolean execute(String sql, String[] strings) throws SQLException {
+    public boolean execute(String sql, String[] columnNames) throws SQLException{
         return execute(sql);
     }
 
     @Override
     public int getResultSetHoldability() throws SQLException {
+        Driver.unused();
         return 0;
     }
 
     @Override
     public boolean isClosed() throws SQLException {
+        checkClosed();
         return isClosed;
     }
 
     @Override
     public void setPoolable(boolean b) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public boolean isPoolable() throws SQLException {
+        Driver.unused();
         return false;
     }
 
     @Override
     public void closeOnCompletion() throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public boolean isCloseOnCompletion() throws SQLException {
+        Driver.unused();
         return false;
     }
 
     @Override
     public <T> T unwrap(Class<T> aClass) throws SQLException {
-        return null;
+        checkClosed();
+        return aClass.cast(this);
     }
 
     @Override
     public boolean isWrapperFor(Class<?> aClass) throws SQLException {
-        return false;
+        checkClosed();
+        return aClass.isInstance(this);
     }
 
     protected BasicInt tableInsert(String sql) throws Exception{

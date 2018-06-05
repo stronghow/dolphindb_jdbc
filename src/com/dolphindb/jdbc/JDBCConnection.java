@@ -1,6 +1,7 @@
 package com.dolphindb.jdbc;
 
 import com.xxdb.DBConnection;
+import com.xxdb.data.Vector;
 
 import java.io.IOException;
 import java.sql.*;
@@ -13,25 +14,20 @@ import java.util.concurrent.Executor;
 public  class JDBCConnection implements Connection {
 
     private DBConnection dbConnection;
-
-    private String filePath;
-    private String tableName;
     private String hostName;
     private int port;
     private boolean success;
-    private com.xxdb.data.Vector databases;
+    private Vector databases;
     private HashMap<String,Boolean> loadTable;
 
 
     public JDBCConnection(Properties prop) throws SQLException{
-        this.filePath = filePath;
-        this.tableName = tableName;
         dbConnection = new DBConnection();
         hostName = prop.getProperty("hostName");
         port = Integer.parseInt(prop.getProperty("port"));
         try {
             open(hostName,port,prop);
-        }catch (IOException e){
+        }catch (Exception e){
             e.printStackTrace();
             String s = e.getMessage();
             if(s.contains("Connection refused")){
@@ -44,7 +40,6 @@ public  class JDBCConnection implements Connection {
     }
 
     private void open(String hostname, int port, Properties prop) throws SQLException, IOException{
-        System.out.println(hostname+port);
         success = dbConnection.connect(hostname, port);
         // database(directory, [partitionType], [partitionScheme], [locations])
         if(!success) throw new SQLException("Connection is fail");
@@ -77,14 +72,13 @@ public  class JDBCConnection implements Connection {
     }
 
     @Override
-    public PreparedStatement prepareStatement(String s) throws SQLException {
-        checkIsClosed();
-        return new JDBCPrepareStatement(this,s);
+    public PreparedStatement prepareStatement(String sql) throws SQLException {
+        return new JDBCPrepareStatement(this,sql);
     }
 
     @Override
     public CallableStatement prepareCall(String s) throws SQLException {
-        checkIsClosed();
+        Driver.unused();
         return null;
     }
 
@@ -96,22 +90,23 @@ public  class JDBCConnection implements Connection {
 
     @Override
     public void setAutoCommit(boolean b) throws SQLException {
-
+        checkIsClosed();
     }
 
     @Override
     public boolean getAutoCommit() throws SQLException {
-        return false;
+        checkIsClosed();
+        return true;
     }
 
     @Override
     public void commit() throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void rollback() throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
@@ -130,241 +125,251 @@ public  class JDBCConnection implements Connection {
 
     @Override
     public DatabaseMetaData getMetaData() throws SQLException {
+        Driver.unused();
         return null;
     }
 
     @Override
     public void setReadOnly(boolean b) throws SQLException {
-
+        checkIsClosed();
     }
 
     @Override
     public boolean isReadOnly() throws SQLException {
+        checkIsClosed();
         return false;
     }
 
     @Override
     public void setCatalog(String s) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public String getCatalog() throws SQLException {
+        Driver.unused();
         return null;
     }
 
     @Override
     public void setTransactionIsolation(int i) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public int getTransactionIsolation() throws SQLException {
+        Driver.unused();
         return 0;
     }
 
     @Override
     public SQLWarning getWarnings() throws SQLException {
+        Driver.unused();
         return null;
     }
 
     @Override
     public void clearWarnings() throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
-    public Statement createStatement(int i, int i1) throws SQLException {
-        checkIsClosed();
+    public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException{
         return createStatement();
     }
 
     @Override
-    public PreparedStatement prepareStatement(String s, int i, int i1) throws SQLException {
-        checkIsClosed();
-        return prepareStatement(s);
+    public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
+        return prepareStatement(sql);
     }
 
     @Override
-    public CallableStatement prepareCall(String s, int i, int i1) throws SQLException {
-        checkIsClosed();
+    public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
+        Driver.unused();
         return null;
     }
 
     @Override
     public Map<String, Class<?>> getTypeMap() throws SQLException {
+        Driver.unused();
         return null;
     }
 
     @Override
     public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
-    public void setHoldability(int i) throws SQLException {
-
+    public void setHoldability(int holdability) throws SQLException{
+        Driver.unused();
     }
 
     @Override
     public int getHoldability() throws SQLException {
+        Driver.unused();
         return 0;
     }
 
     @Override
     public Savepoint setSavepoint() throws SQLException {
+        Driver.unused();
         return null;
     }
 
     @Override
-    public Savepoint setSavepoint(String s) throws SQLException {
+    public Savepoint setSavepoint(String name) throws SQLException{
+        Driver.unused();
         return null;
     }
 
     @Override
     public void rollback(Savepoint savepoint) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
     public void releaseSavepoint(Savepoint savepoint) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
-    public Statement createStatement(int i, int i1, int i2) throws SQLException {
+    public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException{
         checkIsClosed();
         return createStatement();
     }
 
     @Override
-    public PreparedStatement prepareStatement(String s, int i, int i1, int i2) throws SQLException {
+    public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException{
         checkIsClosed();
-        return prepareStatement(s);
+        return prepareStatement(sql);
     }
 
     @Override
-    public CallableStatement prepareCall(String s, int i, int i1, int i2) throws SQLException {
+    public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+        checkIsClosed();
+        Driver.unused();
         return null;
     }
 
     @Override
-    public PreparedStatement prepareStatement(String s, int i) throws SQLException {
+    public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException{
         checkIsClosed();
-        return prepareStatement(s);
+        return prepareStatement(sql);
     }
 
     @Override
-    public PreparedStatement prepareStatement(String s, int[] ints) throws SQLException {
+    public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException{
         checkIsClosed();
-        return prepareStatement(s);
+        return prepareStatement(sql);
     }
 
     @Override
-    public PreparedStatement prepareStatement(String s, String[] strings) throws SQLException {
+    public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException{
         checkIsClosed();
-        return prepareStatement(s);
+        return prepareStatement(sql);
     }
 
     @Override
     public Clob createClob() throws SQLException {
-        // TODO Support this
-        throw new SQLFeatureNotSupportedException();
+        Driver.unused();
+        return null;
     }
 
     @Override
     public Blob createBlob() throws SQLException {
-        // TODO Support this
-        throw new SQLFeatureNotSupportedException();
+        Driver.unused();
+        return null;
     }
 
     @Override
     public NClob createNClob() throws SQLException {
-        // TODO Support this
-        throw new SQLFeatureNotSupportedException();
+        Driver.unused();
+        return null;
     }
 
     @Override
     public SQLXML createSQLXML() throws SQLException {
-        // TODO Support this
-        throw new SQLFeatureNotSupportedException();
+        Driver.unused();
+        return null;
     }
 
     @Override
-    public boolean isValid(int i) throws SQLException {
-        if(getDbConnection() == null){
-            return false;
-        }
-        //TODO
+    public boolean isValid(int timeout) throws SQLException{
+        Driver.unused();
         return true;
-
     }
 
     @Override
-    public void setClientInfo(String s, String s1) throws SQLClientInfoException {
-        // TODO Auto-generated method stub
+    public void setClientInfo(String name, String value) throws SQLClientInfoException{
+        throw new SQLClientInfoException("unused",null);
     }
 
     @Override
-    public void setClientInfo(Properties properties) throws SQLClientInfoException {
-        // TODO Auto-generated method stub
+    public void setClientInfo(Properties properties) throws SQLClientInfoException{
+        throw new SQLClientInfoException("unused",null);
     }
 
     @Override
-    public String getClientInfo(String s) throws SQLException {
-        // TODO Auto-generated method stub
+    public String getClientInfo(String name) throws SQLException{
+        Driver.unused();
         return null;
     }
 
     @Override
     public Properties getClientInfo() throws SQLException {
-        // TODO Auto-generated method stub
+        Driver.unused();
         return null;
     }
 
     @Override
-    public Array createArrayOf(String s, Object[] objects) throws SQLException {
-        // TODO Auto-generated method stub
+    public Array createArrayOf(String typeName, Object[] elements) throws SQLException{
+        Driver.unused();
         return null;
     }
 
     @Override
-    public Struct createStruct(String s, Object[] objects) throws SQLException {
+    public Struct createStruct(String typeName, Object[] elements) throws SQLException {
+        Driver.unused();
         return null;
     }
 
     @Override
-    public void setSchema(String s) throws SQLException {
-
+    public void setSchema(String schema) throws SQLException{
+        Driver.unused();
     }
 
     @Override
     public String getSchema() throws SQLException {
+        Driver.unused();
         return null;
     }
 
     @Override
     public void abort(Executor executor) throws SQLException {
-
+        Driver.unused();
     }
 
     @Override
-    public void setNetworkTimeout(Executor executor, int i) throws SQLException {
-
+    public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException{
+        Driver.unused();
     }
 
     @Override
     public int getNetworkTimeout() throws SQLException {
+        Driver.unused();
         return 0;
     }
 
     @Override
     public <T> T unwrap(Class<T> aClass) throws SQLException {
+        checkIsClosed();
         return aClass.cast(this);
     }
 
     @Override
     public boolean isWrapperFor(Class<?> aClass) throws SQLException {
+        checkIsClosed();
         return aClass.isInstance(this);
     }
 
@@ -377,20 +382,5 @@ public  class JDBCConnection implements Connection {
     public DBConnection getDbConnection() {
         return dbConnection;
     }
-
-    public String getTableName() {
-        return tableName;
-    }
-
-    public String getFilePath() {
-        return filePath;
-    }
-
-    protected void checkOpen() throws SQLException {
-        if (isClosed())
-            throw new SQLException("database connection closed");
-    }
-
-
-
+    
 }

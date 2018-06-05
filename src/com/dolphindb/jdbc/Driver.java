@@ -5,12 +5,11 @@ import java.util.Properties;
 import java.util.logging.Logger;
 
 /**
- * 协议: jdbc:dolphindb://hostName:port?databasePath=
- *      或者 jdbc:dolphindb://databasePath=
+ * url: jdbc:dolphindb://hostName:port?databasePath=
+ *      or jdbc:dolphindb://databasePath=
  * hostName default localhost
  * port default 8848
- * linux url示例 ==> jdbc:dolphindb://127.0.0.1:8848?databasePath=home/username/dolphinDB/data/db01/t1
- * windows url示例 ==> jdbc:dolphindb://127.0.0.1:8848?databasePath=D:/dolphinDB/data/db01/t1
+ *
  */
 
 public class Driver implements java.sql.Driver {
@@ -120,6 +119,7 @@ public class Driver implements java.sql.Driver {
     public static void unused(String s)throws SQLException{
         throw new SQLException(s);
     }
+
     public static void unused()throws SQLException{
         throw new SQLFeatureNotSupportedException("NotSupported");
     }
