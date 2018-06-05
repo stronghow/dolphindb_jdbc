@@ -5,6 +5,7 @@ import com.xxdb.DBConnection;
 import java.io.IOException;
 import java.sql.*;
 import java.text.MessageFormat;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
@@ -18,6 +19,8 @@ public  class JDBCConnection implements Connection {
     private String hostName;
     private int port;
     private boolean success;
+    private com.xxdb.data.Vector databases;
+    private HashMap<String,Boolean> loadTable;
 
 
     public JDBCConnection(Properties prop) throws SQLException{
@@ -52,8 +55,18 @@ public  class JDBCConnection implements Connection {
             System.out.println(values[0]);
             StringBuilder sb = new StringBuilder(Driver.DB).append(" = database(");
             Utils.joinOrder(sb,values,",");
-            sb.append(")");
-            dbConnection.run(sb.toString());
+            sb.append(");\n");
+            sb.append("getTables(").append(Driver.DB).append(")");
+            databases = (com.xxdb.data.Vector) dbConnection.run(sb.toString());
+            if(values[0].trim().startsWith("dfs://")) {
+                StringBuilder loadTableSb = new StringBuilder();
+                for (int i = 0, len = databases.rows(); i < len; ++i) {
+                    String name = databases.get(i).getString();
+                    loadTableSb.append(name).append(" = ").append("loadTable(").append(Driver.DB).append(",`").append(name).append(");\n");
+                }
+                dbConnection.run(loadTableSb.toString());
+            }
+            //loadTable = new HashMap<>(databases.rows());
         }
     }
 
