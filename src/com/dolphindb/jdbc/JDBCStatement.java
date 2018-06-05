@@ -406,7 +406,6 @@ public class JDBCStatement implements Statement {
 
     @Override
     public boolean isClosed() throws SQLException {
-        checkClosed();
         return isClosed;
     }
 
