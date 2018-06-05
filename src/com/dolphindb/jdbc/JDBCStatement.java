@@ -8,8 +8,7 @@ import com.xxdb.data.Void;
 import java.io.IOException;
 import java.sql.*;
 import java.text.MessageFormat;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.*;
 
 public class JDBCStatement implements Statement {
 
@@ -55,7 +54,7 @@ public class JDBCStatement implements Statement {
         checkClosed();
         try {
              s = s.trim();
-             if(s.startsWith("insert") || s.startsWith("tableInsert")){
+             if(s.startsWith("tableInsert")){
                  return tableInsert(s).getInt();
              }else{
                 Entity entity = connection.getDbConnection().run(s);
@@ -276,11 +275,39 @@ public class JDBCStatement implements Statement {
     @Override
     public int[] executeBatch() throws SQLException {
         checkClosed();
+        List<Integer> int_list = new ArrayList<>();
         try {
-            connection.getDbConnection().run(batch.toString());
-            return new int[0];
+            String[] strings = batch.toString().split(";");
+            System.out.println(strings.length);
+            for(String item : strings){
+                if(item.length()>0){
+                    System.out.println(item);
+                    if(item.startsWith("insert") || item.startsWith("tableInsert")){
+                        int_list.add(tableInsert(item).getInt());
+                    }else if(item.startsWith("update")||item.startsWith("delete")){
+                        //todo 获取更新计数
+                        connection.getDbConnection().run(item);
+                    }else{
+                        Entity entity = connection.getDbConnection().run(item);
+                        if(entity instanceof  BasicTable){
+                            int size = int_list.size();
+                            int[] arr_int = new int[size];
+                            for(int i=0; i<size; ++i){
+                                arr_int[i] = int_list.get(i);
+                            }
+                            throw new BatchUpdateException("can not return ResultSet",arr_int);
+                        }
+                    }
+                }
+            }
+            int size = int_list.size();
+            int[] arr_int = new int[size];
+            for(int i=0; i<size; ++i){
+                arr_int[i] = int_list.get(i);
+            }
+            return arr_int;
         }catch (Exception e){
-            return new int[0];
+            throw new SQLException(e);
         }
     }
 
