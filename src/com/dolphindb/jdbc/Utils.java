@@ -36,7 +36,7 @@ public class Utils {
         }else if(o instanceof Vector){
             return ((Vector) o).getString();
         }else{
-            return  null;
+            return  o;
         }
 
     }
@@ -80,5 +80,24 @@ public class Utils {
             index++;
         }
         return properties;
+    }
+
+    public static String getTableName(String s){
+        String s1 = s.trim().split(";")[0];
+
+        int index = s1.indexOf("from");
+        if(index != -1){
+            return s1.substring(index+4).trim().split(" ")[0];
+        }else{
+            return s1;
+        }
+    }
+
+    public static boolean isUpdateable(String s){
+        String s1 = s.trim().split(";")[0];
+        String regex = "full.*join|inner.*join|right.*join|left.*join|" +
+                "join.*(.*)|ej.*(.*)|sej.*(.*)|lj.*(.*)|fj.*(.*)|aj.*(.*)|cj.*(.*)|" +
+                "group.*by|context.*by|pivot.*by";
+        return !s1.matches(regex);
     }
 }

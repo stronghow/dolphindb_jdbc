@@ -1,19 +1,19 @@
 package com.dolphindb.jdbc;
 
 import com.xxdb.data.*;
-import com.xxdb.data.Vector;
 
 import java.io.*;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
-import java.sql.Date;
 import java.text.MessageFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
-import java.util.*;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * DBResultSet 的操作只适合 Vector 和 table, 否则操作会报空指针
@@ -38,15 +38,17 @@ public class JDBCResultSet implements ResultSet{
 
     private HashMap<Integer,Entity> insertRowMap; //插入数据的特殊行
     
-    private HashMap<Integer,Entity> new_updateRowMap; // 新数据的缓存行
+    //private HashMap<Integer,Entity> new_updateRowMap; // 新数据的缓存行
     
-    private HashMap<Integer,Entity> old_updateRowMap; // 旧数据的缓存行
+    //private HashMap<Integer,Entity> old_updateRowMap; // 旧数据的缓存行
 
     private boolean isInsert;
 
     private boolean isClosed = false;
 
-    public JDBCResultSet(JDBCConnection conn, JDBCStatement statement, Entity entity, String columnLabelql) throws SQLException{
+    private boolean isUpdateable = false;
+
+    public JDBCResultSet(JDBCConnection conn, JDBCStatement statement, Entity entity, String sql) throws SQLException{
 
 //        if(entity.isVector()){
 //            List<String> colNames = new ArrayList<>(1);
@@ -74,20 +76,21 @@ public class JDBCResultSet implements ResultSet{
 
         this.conn = conn;
         this.statement = statement;
-        this.tableName = conn.getTableName();
+        this.tableName = Utils.getTableName(sql);
+        this.isUpdateable = Utils.isUpdateable(sql);
         this.filePath = conn.getFilePath();
          if(entity.isTable()){
             this.table = (BasicTable) entity;
          }else{
-            throw new SQLException("ResultSet get data is null");
+            throw new SQLException("ResultSet data is null");
          }
         rows = this.table.rows();
 
         findColumnHashMap = new HashMap<>(this.table.columns());
 
         insertRowMap = new HashMap<>(this.table.columns()+1);
-        new_updateRowMap = new HashMap<>(this.table.columns()+1);
-        old_updateRowMap = new HashMap<>(this.table.columns()+1);
+        //new_updateRowMap = new HashMap<>(this.table.columns()+1);
+        //old_updateRowMap = new HashMap<>(this.table.columns()+1);
 
         for(int i=0; i<this.table.columns(); ++i){
             findColumnHashMap.put(this.table.getColumnName(i),i+1);
@@ -112,8 +115,8 @@ public class JDBCResultSet implements ResultSet{
      * 加载表
      * @throws SQLException
      */
-    public Entity loadTable() throws SQLException{
-        return run(MessageFormat.format("{1} = loadTable(\"{0}\",`{1});{1}",filePath,tableName));
+    private Entity loadTable() throws SQLException{
+        return run(MessageFormat.format("{1} = loadTable(\"{0}\",`{1});{1}",Driver.DB,tableName));
     }
 
     @Override
@@ -128,8 +131,8 @@ public class JDBCResultSet implements ResultSet{
         isClosed = true;
         findColumnHashMap = null;
         insertRowMap = null;
-        new_updateRowMap = null;
-        old_updateRowMap = null;
+        //new_updateRowMap = null;
+        //old_updateRowMap = null;
         table = null;
     }
 
@@ -717,25 +720,45 @@ public class JDBCResultSet implements ResultSet{
 
     @Override
     public void insertRow() throws SQLException {
-
-        if(insertRow == row){
-            insertRun();
-            saveTable();
-            table = (BasicTable) run(tableName);
-            rows = table.rows();
+        try {
+            if(insertRow == row){
+                insertRun();
+                saveTable();
+//                int insert_row = row+1;
+//                int add_row = 0;
+//                for (int index : insertRowMap.keySet()){
+//                    Entity entity = insertRowMap.get(index);
+//                    if(entity.isVector()){
+//                        for (int i=0, len = entity.rows(); i<len; ++i){
+//                            table.getColumn(adjustColumnIndex(index)).set(insert_row+row,((Vector)entity).get(i));
+//                        }
+//                    }else{
+//                        table.getColumn(adjustColumnIndex(index)).set(insert_row,(Scalar) entity);
+//                    }
+//                }
+                table = (BasicTable) run(tableName);
+                rows = table.rows();
+            }
+            insertRowMap.clear();
+            isInsert = false;
+        }catch (Exception e){
+            throw new SQLException(e);
         }
-        insertRowMap.clear();
-        isInsert = false;
+
     }
 
     @Override
     public void updateRow() throws SQLException {
+        if(!isUpdateable) throw new SQLException("Unable to update join table");
         if(updateRow == row){
             updateRun();
+            for(int index : insertRowMap.keySet()){
+                update1(index,insertRowMap.get(index));
+            }
             saveTable();
         }
-        old_updateRowMap.clear();
-        new_updateRowMap.clear();
+        //old_updateRowMap.clear();
+        insertRowMap.clear();
     }
 
     @Override
@@ -755,6 +778,8 @@ public class JDBCResultSet implements ResultSet{
 
     @Override
     public void refreshRow() throws SQLException {
+        checkedClose();
+        isUpdateable();
         BasicTable newTable = (BasicTable) loadTable();
         try {
             for(int i=0; i<newTable.columns(); ++i){
@@ -768,7 +793,8 @@ public class JDBCResultSet implements ResultSet{
 
     @Override
     public void cancelRowUpdates() throws SQLException {
-
+        insertRowMap.clear();
+        //new_updateRowMap.clear();
     }
 
     @Override
@@ -1260,13 +1286,23 @@ public class JDBCResultSet implements ResultSet{
         update(findColumn(name),value);
     }
 
+
+
     private void update(int columnIndex, Object value) throws SQLException{
+        checkedClose();
+        isUpdateable();
         if(isInsert){
-            insert(columnIndex, value);
+            insertRow = row;
         }else{
-            checkedClose();
             updateRow = row;
-            old_updateRowMap.put(columnIndex,table.getColumn(adjustColumnIndex(columnIndex)).get(row));
+//            old_updateRowMap.put(columnIndex,table.getColumn(adjustColumnIndex(columnIndex)).get(row));
+
+//            new_updateRowMap.put(columnIndex,table.getColumn(adjustColumnIndex(columnIndex)).get(row));
+        }
+        insert(columnIndex, value);
+    }
+
+    private void update1(int columnIndex, Object value) throws SQLException{
             Vector vector = table.getColumn(adjustColumnIndex(columnIndex));
             if(value instanceof Scalar){
                 try {
@@ -1329,8 +1365,6 @@ public class JDBCResultSet implements ResultSet{
             } else {
                 updateDateTime(columnIndex,value);
             }
-            new_updateRowMap.put(columnIndex,table.getColumn(adjustColumnIndex(columnIndex)).get(row));
-        }
     }
 
     private void insert(String name, Object value) throws SQLException{
@@ -1340,7 +1374,6 @@ public class JDBCResultSet implements ResultSet{
 
     private void insert(int columnIndex, Object value) throws SQLException{
         checkedClose();
-        insertRow = row;
         if(value instanceof Scalar){
             insertRowMap.put(columnIndex,(Scalar) value);
         }else if(value instanceof Vector) {
@@ -1349,6 +1382,8 @@ public class JDBCResultSet implements ResultSet{
             insertRowMap.put(columnIndex,new BasicBoolean((boolean)value));
         }else if(value instanceof Byte){
             insertRowMap.put(columnIndex,new BasicByte((byte) value));
+        }else if(value instanceof Character){
+            insertRowMap.put(columnIndex,new BasicByte((byte)((char)value & 0xFF)));
         }else if(value instanceof Integer){
             insertRowMap.put(columnIndex,new BasicInt((int) value));
         }else if(value instanceof Short){
@@ -1450,13 +1485,11 @@ public class JDBCResultSet implements ResultSet{
         StringBuilder where = new StringBuilder(" where ");
         sb.append("update ").append(tableName).append(" set ");
         for (int i = 1; i <= table.columns(); ++i) {
-            if((value = new_updateRowMap.get(i)) != null){
+            if((value = insertRowMap.get(i)) != null){
                 sb.append(getColumnName(i)).append(" = ").append(Utils.java2db(value)).append(", ");
-                where.append(getColumnName(i)).append(" = ").append(Utils.java2db(old_updateRowMap.get(i))).append(" ,");
-            }else{
-                where.append(getColumnName(i)).append(" = ").append(Utils.java2db(table.getColumn(adjustColumnIndex(i)).get(row))).append(" ,");
+                //where.append(getColumnName(i)).append(" = ").append(Utils.java2db(old_updateRowMap.get(i))).append(" ,");
             }
-            
+            where.append(getColumnName(i)).append(" = ").append(Utils.java2db(table.getColumn(adjustColumnIndex(i)).get(row))).append(" ,");
         }
         sb.delete(sb.length()-2,sb.length());
         where.delete(where.length()-2,where.length());
@@ -1489,7 +1522,7 @@ public class JDBCResultSet implements ResultSet{
             throw new SQLException(e);
         }
     }
-    
+
     private String JAVA2DBString(Entity entity, Object value){
         if(value instanceof Boolean){
             return new BasicBoolean((boolean) value).getString();
@@ -1546,7 +1579,7 @@ public class JDBCResultSet implements ResultSet{
                 return new BasicMonth((YearMonth) value).getString();
             }
         }
-        
+
         return "";
     }
 
@@ -1606,5 +1639,8 @@ public class JDBCResultSet implements ResultSet{
         return obj;
     }
 
+     public void isUpdateable() throws SQLException{
+         if(!isUpdateable) throw new SQLException("Unable to update join table");
+     }
 
 }
