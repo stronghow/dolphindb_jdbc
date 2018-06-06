@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Utils {
     public static Object java2db(Object o){
@@ -101,10 +103,13 @@ public class Utils {
         String regex = "full.*join|inner.*join|right.*join|left.*join|" +
                 "join.*(.*)|ej.*(.*)|sej.*(.*)|lj.*(.*)|fj.*(.*)|aj.*(.*)|cj.*(.*)|" +
                 "group.*by|context.*by|pivot.*by";
-        return !s1.matches(regex);
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(s1);
+
+        return !matcher.find();
     }
 
-    public static String getRandomString(int length) { //length表示生成字符串的长度
+    public static String getRandomString(int length) {
         String character = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
         String base = character + "0123456789";
         Random random = new Random();

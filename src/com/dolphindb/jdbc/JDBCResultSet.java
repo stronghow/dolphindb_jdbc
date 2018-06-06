@@ -6,6 +6,7 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
+import java.text.MessageFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -45,8 +46,8 @@ public class JDBCResultSet implements ResultSet{
         sql = sql.replaceAll("\n","").trim();
         this.conn = conn;
         this.statement = statement;
-        this.tableName = Utils.getRandomString(5);
-        this.isUpdateable = Utils.isUpdateable(sql);
+        //this.tableName = Utils.getRandomString(5);       //Utils.getTableName(sql);
+
          if(entity.isTable()){
             this.table = (BasicTable) entity;
          }else{
@@ -62,7 +63,23 @@ public class JDBCResultSet implements ResultSet{
             findColumnHashMap.put(this.table.getColumnName(i),i+1);
         }
 
-        run(tableName + " = " + sql);
+//        run(tableName + " = " + sql);
+//        String s = run("typestr " + tableName).getString();
+//        System.out.println(s);
+
+        this.isUpdateable = Utils.isUpdateable(sql);
+
+        if(this.isUpdateable){
+            this.tableName = Utils.getTableName(sql);
+            if(Utils.isUpdateable(this.tableName)){
+                String s = run("typestr " + tableName).getString();
+                if(!s.equals("IN-MEMORY TABLE")){
+                    this.isUpdateable = false;
+                }
+            }
+        }else{
+            this.tableName = "";
+        }
 
         System.out.println(table.rows() + "  "+ table.columns());
     }
@@ -698,9 +715,11 @@ public class JDBCResultSet implements ResultSet{
         isUpdateable();
         if(updateRow == row){
             updateRun();
-            for(int index : insertRowMap.keySet()){
-                update1(index,insertRowMap.get(index));
-            }
+//            for(int index : insertRowMap.keySet()){
+//                update1(index,insertRowMap.get(index));
+//            }
+            table = loadTable();
+            rows = table.rows();
         }
         insertRowMap.clear();
     }
@@ -714,7 +733,6 @@ public class JDBCResultSet implements ResultSet{
         }
         sb.delete(sb.length()-2,sb.length());
         String sql = sb.toString();
-        System.out.println(sql);
         run(sql);
         table = loadTable();
         rows = table.rows();
@@ -737,21 +755,31 @@ public class JDBCResultSet implements ResultSet{
 
     @Override
     public void cancelRowUpdates() throws SQLException {
+        checkClosed();
+        isUpdateable();
+        if(isInsert){
+            throw new SQLException("cursor is on the insert row");
+        }
         insertRowMap.clear();
+        isInsert = false;
     }
 
     @Override
     public void moveToInsertRow() throws SQLException {
+        checkClosed();
+        isUpdateable();
         isInsert = true;
     }
 
     @Override
     public void moveToCurrentRow() throws SQLException {
+        checkClosed();
         isInsert = false;
     }
 
     @Override
     public Statement getStatement() throws SQLException {
+        checkClosed();
         return statement;
     }
 
@@ -1273,71 +1301,6 @@ public class JDBCResultSet implements ResultSet{
         insert(columnIndex, value);
     }
 
-    private void update1(int columnIndex, Object value) throws SQLException{
-            Vector vector = table.getColumn(adjustColumnIndex(columnIndex));
-            if(value instanceof Scalar){
-                try {
-                    table.getColumn(adjustColumnIndex(columnIndex)).set(row, (Scalar)value);
-                }catch (Exception e){
-                    throw new SQLException(e);
-                }
-            }if (value instanceof Boolean) {
-                ((BasicBooleanVector) table.getColumn(adjustColumnIndex(columnIndex))).setBoolean(row, (boolean) value);
-            } else if (value instanceof Byte) {
-                ((BasicByteVector) table.getColumn(adjustColumnIndex(columnIndex))).setByte(row, (byte) value);
-            } else if (value instanceof Character){
-                System.out.println(table.getColumn(adjustColumnIndex(columnIndex)).getClass().getName());
-                ((BasicByteVector) table.getColumn(adjustColumnIndex(columnIndex))).setByte(row, (byte) ((char)value & 0xFF));
-            }
-            else if (value instanceof Integer) {
-                if(vector instanceof BasicLongVector){
-                    ((BasicLongVector) vector).setLong(row, (int) value);
-                }else if(vector instanceof BasicIntVector){
-                    ((BasicIntVector) vector).setInt(row,(int) value);
-                }else if(vector instanceof BasicShortVector){
-                    ((BasicShortVector) vector).setShort(row,Short.valueOf(value.toString()));
-                }
-            } else if (value instanceof Short) {
-                if(vector instanceof BasicLongVector){
-                    ((BasicLongVector) vector).setLong(row, (short) value);
-                }else if(vector instanceof BasicIntVector){
-                    ((BasicIntVector) vector).setInt(row,(short) value);
-                }else if(vector instanceof BasicShortVector){
-                    ((BasicShortVector) vector).setShort(row,(short) value);
-                }
-            } else if (value instanceof Long) {
-                if(vector instanceof BasicLongVector){
-                    ((BasicLongVector) vector).setLong(row, (long) value);
-                }else if(vector instanceof BasicIntVector){
-                    ((BasicIntVector) vector).setInt(row,Integer.valueOf(value.toString()));
-                }else if(vector instanceof BasicShortVector){
-                    ((BasicShortVector) vector).setShort(row,Short.valueOf(value.toString()));
-                }
-            } else if (value instanceof Float) {
-                if(vector instanceof BasicFloatVector){
-                    ((BasicFloatVector) vector).setFloat(row,(float) value);
-                }else if (vector instanceof BasicDoubleVector){
-                    ((BasicDoubleVector) vector).setDouble(row,(float) value);
-                }
-            } else if (value instanceof Double) {
-                if(vector instanceof BasicFloatVector){
-                    ((BasicFloatVector) vector).setFloat(row,(float) value);
-                }else if (vector instanceof BasicDoubleVector){
-                    ((BasicDoubleVector) vector).setDouble(row,(double) value);
-                }
-            } else if (value instanceof String) {
-                ((BasicStringVector) table.getColumn(adjustColumnIndex(columnIndex))).setString(row, (String) value);
-            } else if (value instanceof Date) {
-                updateDateTime(columnIndex, ((Date) value).toLocalDate());
-            } else if (value instanceof Time) {
-                updateDateTime(columnIndex, ((Time) value).toLocalTime());
-            } else if (value instanceof Timestamp) {
-                updateDateTime(columnIndex, ((Timestamp) value).toLocalDateTime());
-            } else {
-                updateDateTime(columnIndex,value);
-            }
-    }
-
     private void insert(String name, Object value) throws SQLException{
         insert(findColumn(name),value);
     }
@@ -1345,74 +1308,46 @@ public class JDBCResultSet implements ResultSet{
 
     private void insert(int columnIndex, Object value) throws SQLException{
         checkClosed();
-        if(value instanceof Scalar){
+        if(value instanceof LocalDate || value instanceof LocalTime || value instanceof LocalDateTime|| value instanceof YearMonth ||
+                value instanceof Date || value instanceof Time || value instanceof Timestamp ||
+                value instanceof BasicDate || value instanceof BasicDateVector ||
+                value instanceof BasicTime || value instanceof BasicTimeVector ||
+                value instanceof BasicMinute || value instanceof BasicMinuteVector ||
+                value instanceof BasicSecond || value instanceof BasicDate ||
+                value instanceof BasicNanoTime || value instanceof BasicDate ||
+                value instanceof BasicTimestamp || value instanceof BasicDate ||
+                value instanceof BasicDateTime || value instanceof BasicDate ||
+                value instanceof BasicNanoTimestamp || value instanceof BasicNanoTimestampVector){
+            insertDateTime(columnIndex,value);
+        }else if(value instanceof Boolean || value instanceof BasicBoolean || value instanceof BasicBooleanVector ||
+                value instanceof Byte || value instanceof BasicByte || value instanceof BasicByteVector ||
+                value instanceof Character ||
+                value instanceof Integer || value instanceof BasicInt || value instanceof BasicIntVector ||
+                value instanceof Short || value instanceof  BasicShort || value instanceof  BasicShortVector ||
+                value instanceof Long || value instanceof BasicLong || value instanceof BasicLongVector ||
+                value instanceof Float || value instanceof BasicFloat || value instanceof BasicFloatVector ||
+                value instanceof Double || value instanceof BasicDouble || value instanceof BasicDoubleVector ||
+                value instanceof String || value instanceof BasicString || value instanceof BasicStringVector ){
+            insertBasicType(columnIndex,value);
+        }else if(value instanceof Scalar){
             insertRowMap.put(columnIndex,(Scalar) value);
         }else if(value instanceof Vector) {
             insertRowMap.put(columnIndex,(Vector) value);
-        }else if(value instanceof Boolean){
-            insertRowMap.put(columnIndex,new BasicBoolean((boolean)value));
-        }else if(value instanceof Byte){
-            insertRowMap.put(columnIndex,new BasicByte((byte) value));
-        }else if(value instanceof Character){
-            insertRowMap.put(columnIndex,new BasicByte((byte)((char)value & 0xFF)));
-        }else if(value instanceof Integer){
-            insertRowMap.put(columnIndex,new BasicInt((int) value));
-        }else if(value instanceof Short){
-            insertRowMap.put(columnIndex,new BasicShort((short) value));
-        }else if(value instanceof Long){
-            insertRowMap.put(columnIndex,new BasicLong((long) value));
-        }else if(value instanceof Float){
-            insertRowMap.put(columnIndex,new BasicFloat((float) value));
-        }else if(value instanceof Double){
-            insertRowMap.put(columnIndex,new BasicDouble((double) value));
-        }else if(value instanceof String){
-            insertRowMap.put(columnIndex,new BasicString((String) value));
-        }else if(value instanceof Date){
-            insertDateTime(columnIndex,((Date) value).toLocalDate());
-        }else if(value instanceof Time){
-            insertDateTime(columnIndex,((Time) value).toLocalTime());
-        }else if(value instanceof Timestamp){
-            insertDateTime(columnIndex,((Timestamp) value).toLocalDateTime());
         }else {
-            insertDateTime(columnIndex,value);
+            throw new SQLException("only supports boolean int char short long float double string scalar vector");
         }
     }
 
-
-    private void updateDateTime(String name, Object value) throws SQLException{
-        updateDateTime(findColumn(name),value);
+    private void insertBasicType(String name, Object value) throws SQLException{
+        insertDateTime(findColumn(name),value);
     }
 
-    private void updateDateTime(int columnIndex, Object value) throws SQLException{
+    private void insertBasicType(int columnIndex, Object value) throws SQLException{
         Vector vector = table.getColumn(adjustColumnIndex(columnIndex));
-        if(value instanceof LocalDate){
-            if(vector instanceof BasicDateVector){
-                ((BasicDateVector) vector).setDate(row,(LocalDate) value);
-            }
-        }else if(value instanceof LocalTime){
-            if(vector instanceof BasicTimeVector){
-                ((BasicTimeVector) vector).setTime(row,(LocalTime) value);
-            }else if(vector instanceof BasicMinuteVector){
-                ((BasicMinuteVector) vector).setMinute(row,(LocalTime) value);
-            }else if(vector instanceof BasicSecondVector){
-                ((BasicSecondVector) vector).setSecond(row,(LocalTime) value);
-            }else if(vector instanceof BasicNanoTime){
-                ((BasicNanoTimeVector) vector).setNanoTime(row,(LocalTime) value);
-            }
-        }else if(value instanceof LocalDateTime){
-            if(vector instanceof BasicDateTimeVector){
-                ((BasicDateTimeVector) vector).setDateTime(row,(LocalDateTime) value);
-            }else if(vector instanceof BasicTimestampVector){
-                ((BasicTimestampVector) vector).setTimestamp(row,(LocalDateTime) value);
-            }else if(vector instanceof BasicNanoTimestampVector){
-                ((BasicNanoTimestampVector) vector).setNanoTimestamp(row,(LocalDateTime) value);
-            }
-        }else if(value instanceof YearMonth){
-            if(vector instanceof BasicMonthVector){
-                ((BasicMonthVector) vector).setMonth(row,(YearMonth) value);
-            }
-        }
+        String s = Utils.java2db(value).toString();
+        insertRowMap.put(columnIndex,basicTypeCast(s,vector));
     }
+
 
     private void insertDateTime(String name, Object value) throws SQLException{
         insertDateTime(findColumn(name),value);
@@ -1420,32 +1355,78 @@ public class JDBCResultSet implements ResultSet{
 
     private void insertDateTime(int columnIndex, Object value) throws SQLException{
         Vector vector = table.getColumn(adjustColumnIndex(columnIndex));
-        if(value instanceof LocalDate){
-            if(vector instanceof BasicDateVector){
-                insertRowMap.put(columnIndex,new BasicDate((LocalDate) value));
-            }
+        String s=null;
+        if(value instanceof Date){
+            s = new BasicDate(((Date) value).toLocalDate()).getString();
+        }else if(value instanceof Time){
+            s = new BasicNanoTime(((Time) value).toLocalTime()).getString();
+        }else if(value instanceof Timestamp){
+            s = new BasicNanoTimestamp(((Timestamp) value).toLocalDateTime()).getString();
+        }else if(value instanceof LocalDate){
+            s = new BasicDate(((LocalDate) value)).getString();
         }else if(value instanceof LocalTime){
-            if(vector instanceof BasicTimeVector){
-                insertRowMap.put(columnIndex,new BasicTime((LocalTime) value));
-            } else if(vector instanceof BasicMinuteVector){
-                insertRowMap.put(columnIndex,new BasicMinute((LocalTime) value));
-            }else if(vector instanceof BasicSecondVector){
-                insertRowMap.put(columnIndex,new BasicSecond((LocalTime) value));
-            }else if(vector instanceof BasicNanoTime){
-                insertRowMap.put(columnIndex,new BasicNanoTime((LocalTime) value));
-            }
+            s = new BasicNanoTime((LocalTime) value).getString();
         }else if(value instanceof LocalDateTime){
-            if(vector instanceof BasicTimestampVector){
-                insertRowMap.put(columnIndex,new BasicTimestamp((LocalDateTime) value));
-            }else if(vector instanceof BasicDateTimeVector){
-                insertRowMap.put(columnIndex,new BasicDateTime((LocalDateTime) value));
-            }else if(vector instanceof BasicNanoTimestampVector){
-                insertRowMap.put(columnIndex,new BasicNanoTimestamp((LocalDateTime) value));
-            }
+            s = new BasicNanoTimestamp((LocalDateTime) value).getString();
         }else if(value instanceof YearMonth){
-            if(vector instanceof BasicMonthVector){
-                insertRowMap.put(columnIndex,new BasicMonth((YearMonth) value));
-            }
+            s = new BasicMonth((YearMonth) value).getString();
+        }else if(value instanceof BasicDate || value instanceof BasicDateVector ||
+                 value instanceof BasicTime || value instanceof BasicTimeVector ||
+                 value instanceof BasicMinute || value instanceof BasicMinuteVector ||
+                 value instanceof BasicSecond || value instanceof BasicSecondVector ||
+                 value instanceof BasicNanoTime || value instanceof BasicNanoTimeVector ||
+                 value instanceof BasicTimestamp || value instanceof BasicTimestampVector ||
+                 value instanceof BasicDateTime || value instanceof BasicDateTimeVector ||
+                 value instanceof BasicNanoTimestamp || value instanceof BasicNanoTimestampVector){
+            s = ((Entity) value).getString();
+        }
+        if(s == null){
+            throw new SQLException("can not cast dataTime");
+        }
+        insertRowMap.put(columnIndex,dateTimeCast(s,vector));
+    }
+
+    private Entity basicTypeCast(String s,Entity entity) throws SQLException{
+        if(entity instanceof BasicBooleanVector){
+            return run(MessageFormat.format("cast({0},BOOL)",s));
+        }else if(entity instanceof BasicByteVector){
+            return run(MessageFormat.format("cast({0},CHAR)",s));
+        }else if(entity instanceof BasicIntVector){
+            return run(MessageFormat.format("cast({0},INT)",s));
+        }else if(entity instanceof BasicShortVector){
+            return run(MessageFormat.format("cast({0},SHORT)",s));
+        }else if(entity instanceof BasicLongVector){
+            return run(MessageFormat.format("cast({0},LONG)",s));
+        }else if(entity instanceof BasicFloatVector){
+            return run(MessageFormat.format("cast({0},FLOAT)",s));
+        }else if(entity instanceof BasicDoubleVector){
+            return run(MessageFormat.format("cast({0},DOUBLE)",s));
+        }else if(entity instanceof BasicStringVector){
+            return run(MessageFormat.format("cast({0},STRING)",s));
+        }else{
+            throw new SQLException("can not cast basicType");
+        }
+    }
+
+    private Entity dateTimeCast(String s,Entity entity) throws SQLException{
+        if(entity instanceof BasicDateVector){
+            return run(MessageFormat.format("cast({0},DATE)",s));
+        }else if(entity instanceof BasicTimeVector){
+            return run(MessageFormat.format("cast({0},TIME)",s));
+        }else if(entity instanceof BasicMinuteVector){
+            return run(MessageFormat.format("cast({0},MINUTE)",s));
+        }else if(entity instanceof BasicSecondVector){
+            return run(MessageFormat.format("cast({0},SECOND)",s));
+        }else if(entity instanceof BasicNanoTimeVector){
+            return run(MessageFormat.format("cast({0},NANOTIME)",s));
+        }else if(entity instanceof BasicTimestampVector){
+            return run(MessageFormat.format("cast({0},TIMESTAMP)",s));
+        }else if(entity instanceof BasicDateTimeVector){
+            return run(MessageFormat.format("cast({0},DATETIME)",s));
+        }else if(entity instanceof BasicNanoTimestampVector){
+            return run(MessageFormat.format("cast({0},NANOTIMESTAMP)",s));
+        }else{
+            throw new SQLException("can not cast dataTime");
         }
     }
 
@@ -1464,9 +1445,8 @@ public class JDBCResultSet implements ResultSet{
         sb.delete(sb.length()-2,sb.length());
         where.delete(where.length()-2,where.length());
         sb.append(where);
-                
+
         String sql = sb.toString();
-        System.out.println(sql);
         run(sql);
     }
 
@@ -1481,7 +1461,6 @@ public class JDBCResultSet implements ResultSet{
         sb.delete(sb.length()-2,sb.length());
         sb.append(")");
         String sql = sb.toString();
-        System.out.println(sql);
         run(sql);
     }
 

@@ -18,12 +18,21 @@ public class Main {
 
     private static final String path_All = "/data/dballdata";
 
+    private static final String path_test = "/data/test";
+
     private static final String DB_URL = MessageFormat.format("jdbc:dolphindb://localhost:8848?databasePath={0}{1}",System.getProperty("user.dir").replaceAll("\\\\","/"),path_All);
 
     private static final String DB_URL1 = "jdbc:dolphindb://";
 
+    private static final String DB_URL_DFS = "jdbc:dolphindb://localhost:8499?databasePath=dfs://valuedb&partitionType=VALUE&partitionScheme=2000.01M..2016.12M";
+
+    private static final String DB_URL_DFS1 = "jdbc:dolphindb://localhost:8499?databasePath=dfs://rangedb&partitionType=RANGE&partitionScheme= 0 5 10&locations= [`rh8503, `rh8502`rh8504]";
+
     public static void main(String[] args) throws Exception{
-//      CreateTable(System.getProperty("user.dir")+"/data/createTable.java");
+
+       //CreateTable(System.getProperty("user.dir")+"/data/createTable_all.java",path_All,"t2");
+
+
 
         Object[] o1 = new Object[]{true, 'a', 122, 21, 22, 2.1f, 2.1, "Hello",
                 new BasicDate(LocalDate.parse("2013-06-13")),
@@ -34,7 +43,7 @@ public class Main {
                 new BasicDateTime(LocalDateTime.parse("2012-06-13T13:30:10")),
                 new BasicTimestamp(LocalDateTime.parse("2012-06-13T13:30:10.008")),
                 new BasicNanoTime(LocalTime.parse("13:30:10.008007006")),
-                new BasicNanoTimestamp(LocalDateTime.parse("2012-06-13T13:30:10.008007006"))};
+                new BasicDate(LocalDate.parse("2013-06-13"))};
 
         Object[] o2 = new Object[]{true, 'A', 123, 22, 23, 2.2f, 2.2, "world",
                 new BasicDate(LocalDate.parse("2013-06-14")),
@@ -45,7 +54,7 @@ public class Main {
                 new BasicDateTime(LocalDateTime.parse("2012-06-13T13:30:11")),
                 new BasicTimestamp(LocalDateTime.parse("2012-06-13T13:30:10.009")),
                 new BasicNanoTime(LocalTime.parse("13:30:10.008007007")),
-                new BasicNanoTimestamp(LocalDateTime.parse("2012-06-13T13:30:10.008007007"))};
+                new BasicDate(LocalDate.parse("2013-06-14"))};
 
         Object[][] o3 = new Object[][]{o1,o2};
 
@@ -118,51 +127,53 @@ public class Main {
         }
 
 
-        TestPreparedStatement("t1 = loadTable(system_db,`t1)","insert into t1 values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",o4);
+//        TestPreparedStatement(DB_URL,"t1 = loadTable(system_db,`t1)","insert into t1 values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",o4);
+//
+//
+//        TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,false);
+        TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,true);
+//
+//        TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select bool,char from ej(t1, t1, `bool)",new Object[]{true,'a'},true);
+//
+//        TestResultSetUpdate(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,false);
+//        TestResultSetUpdate(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,true);
+//
+//        TestResultSetDelete(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",2,false);
+//        TestResultSetDelete(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",2,true);
 
-
-        TestResultSetInsert("t1 = loadTable(system_db,`t1)","select * from t1",o1,false);
-        TestResultSetInsert("t1 = loadTable(system_db,`t1)","select * from t1",o1,true);
-
-        TestResultSetInsert("t1 = loadTable(system_db,`t1)","select bool from t1",new Object[]{true},true);
-
-        TestResultSetUpdate("t1 = loadTable(system_db,`t1)","select * from t1",o1,false);
-        TestResultSetUpdate("t1 = loadTable(system_db,`t1)","select * from t1",o1,true);
-
-        TestResultSetDelete("t1 = loadTable(system_db,`t1)","select * from t1",2,false);
-        TestResultSetDelete("t1 = loadTable(system_db,`t1)","select * from t1",2,true);
-
-        TestPreparedStatementBatch("t1 = loadTable(system_db,`t1)","select * from t1","insert into t1 values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",o3);
-
-
-        String sql = "bool = [true, false];\n" +
-                "int = [1, 2];\n" +
-                "bool_single = true;\n" +
-                "int_single = 1;\n" +
-                "t1 = table(bool, int);\n" +
-                "insert into t1 values (bool_single, int_single);\n" +
-                "tableInsert(t1, (bool_single, int_single));\n" +
-                "select * from t1;\n" +
-                "delete from t1 where int=1;\n" +
-                "update t1 set int = 2 where int = 1;\n" +
-                "t1;";
-
-        TestStatementExecute(DB_URL1,sql);
+//        TestPreparedStatementBatch(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1","insert into t1 values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",o3);
+//
+//
+//
+//        TestResultSetInsert(DB_URL_DFS,"pt = loadTable(system_db,`pt)","select top 10 * from pt",new Object[]{new BasicMonth(YearMonth.parse("2016-07")),0.007},true);
+//
+//        TestResultSetUpdate(DB_URL_DFS,"pt = loadTable(system_db,`pt)","select top 10 * from pt",new Object[]{new BasicMonth(YearMonth.parse("2016-07")),0.007},true);
+//
+//        TestResultSetDelete(DB_URL_DFS,"pt = loadTable(system_db,`pt)","select top 10 * from pt",1,true);
+//
+//
+//        String sql = "bool = [true, false];\n" +
+//                "int = [1, 2];\n" +
+//                "t1 = table(bool, int);\n" +
+//                "insert into t1 values (bool, int);\n";
+//        TestResultSetUpdate(DB_URL,sql,"select * from t1",new Object[]{true, 3},true);
+//
+//        TestStatementExecute(DB_URL_DFS1,"select  top 10 * from pt");
 
     }
 
-    public static void CreateTable(String fileName){
+    public static void CreateTable(String file,String savePath,String tableName){
         DBConnection db=null;
         try {
-            BufferedReader bufferedReader = new BufferedReader(new FileReader(fileName));
+            BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
             StringBuilder sb = new StringBuilder();
             String s = null;
             while ((s = bufferedReader.readLine()) != null){
                 sb.append(s).append("\n");
             }
             sb.append(Driver.DB).append(" = ").append("database(\"").
-                    append(System.getProperty("user.dir").replaceAll("\\\\","/")).append(path_All).append("\")\n");
-            sb.append("saveTable(").append(Driver.DB).append(", t1, `t1);\n");
+                    append(System.getProperty("user.dir").replaceAll("\\\\","/")).append(savePath).append("\")\n");
+            sb.append("saveTable(").append(Driver.DB).append(", t1, `").append(tableName).append(");\n");
             db = new DBConnection();
             db.connect("127.0.0.1",8848);
             db.run(sb.toString());
@@ -172,6 +183,8 @@ public class Main {
             if(db != null) db.close();
         }
     }
+
+
 
     public static void TestStatementExecute(String url,String sql) throws Exception{
         System.out.println("TestStatementExecute begin");
@@ -227,14 +240,14 @@ public class Main {
     }
 
 
-    public static void TestPreparedStatement(String loadTable,String preSql, Object[] objects) throws Exception{
+    public static void TestPreparedStatement(String url,String loadTable,String preSql, Object[] objects) throws Exception{
         System.out.println("TestStatement begin");
 
         Connection conn = null;
         PreparedStatement stmt = null;
         try{
             Class.forName(JDBC_DRIVER);
-            conn = DriverManager.getConnection(DB_URL);
+            conn = DriverManager.getConnection(url);
             stmt = conn.prepareStatement(preSql);
             stmt.execute(loadTable);
             int index = 1;
@@ -287,14 +300,14 @@ public class Main {
         System.out.println("TestPreparedStatement end");
     }
 
-    public static void TestPreparedStatementBatch(String loadTable, String select, String batchSql, Object[] objects) throws Exception{
+    public static void TestPreparedStatementBatch(String url,String loadTable, String select, String batchSql, Object[] objects) throws Exception{
         System.out.println("TestPreparedStatementBatch begin");
 
         Connection conn = null;
         PreparedStatement stmt = null;
         try{
             Class.forName(JDBC_DRIVER);
-            conn = DriverManager.getConnection(DB_URL);
+            conn = DriverManager.getConnection(url);
             stmt = conn.prepareStatement(batchSql);
             stmt.execute(loadTable);
             for(int i=0; i<objects.length; ++i){
@@ -330,14 +343,14 @@ public class Main {
         System.out.println("TestPreparedStatementBatch end");
     }
 
-    public static void TestResultSetInsert(String loadTable, String select, Object[] objects, boolean isInsert) throws Exception{
+    public static void TestResultSetInsert(String url, String loadTable, String select, Object[] objects, boolean isInsert) throws Exception{
         System.out.println("TestResultSetInsert begin");
 
         Connection conn = null;
         Statement stmt = null;
         try{
             Class.forName(JDBC_DRIVER);
-            conn = DriverManager.getConnection(DB_URL);
+            conn = DriverManager.getConnection(url);
             stmt = conn.createStatement();
             stmt.execute(loadTable);
             ResultSet rs = stmt.executeQuery(select);
@@ -373,14 +386,14 @@ public class Main {
         System.out.println("TestResultSetInsert end");
     }
 
-    public static void TestResultSetUpdate(String loadTable,String select, Object[] objects, boolean isUpdate) throws Exception{
+    public static void TestResultSetUpdate(String url,String loadTable,String select, Object[] objects, boolean isUpdate) throws Exception{
         System.out.println("TestResultSetInsert begin");
 
         Connection conn = null;
         Statement stmt = null;
         try{
             Class.forName(JDBC_DRIVER);
-            conn = DriverManager.getConnection(DB_URL);
+            conn = DriverManager.getConnection(url);
             stmt = conn.createStatement();
             stmt.execute(loadTable);
             ResultSet rs = stmt.executeQuery(select);
@@ -415,7 +428,7 @@ public class Main {
         System.out.println("TestResultSetInsert end");
     }
 
-    public static void TestResultSetDelete(String loadTable,String select, int row, boolean isDelete) throws Exception{
+    public static void TestResultSetDelete(String url,String loadTable,String select, int row, boolean isDelete) throws Exception{
         System.out.println("TestResultSetDelete begin");
 
         Connection conn = null;
@@ -423,7 +436,7 @@ public class Main {
         try{
 
             Class.forName(JDBC_DRIVER);
-            conn = DriverManager.getConnection(DB_URL);
+            conn = DriverManager.getConnection(url);
             stmt = conn.createStatement();
             stmt.execute(loadTable);
             ResultSet rs = stmt.executeQuery(select);

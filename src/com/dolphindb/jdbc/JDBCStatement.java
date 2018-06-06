@@ -156,10 +156,8 @@ public class JDBCStatement implements Statement {
         checkClosed();
         try {
             String[] strings = sql.split(";");
-            System.out.println(strings.length);
             for(String item : strings){
                 if(item.length()>0){
-                    System.out.println(item);
                     if(item.startsWith("insert") || item.startsWith("tableInsert")){
                         objectQueue.offer(tableInsert(item).getInt());
                     }else if(item.startsWith("update")||item.startsWith("delete")){
@@ -178,7 +176,6 @@ public class JDBCStatement implements Statement {
             if(objectQueue.isEmpty()){
                 return false;
             }else {
-                System.out.println(objectQueue.size());
                 result = objectQueue.poll();
                 if(result instanceof ResultSet){
                     return true;
