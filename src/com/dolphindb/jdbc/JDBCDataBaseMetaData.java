@@ -1,12 +1,22 @@
 package com.dolphindb.jdbc;
 
+import com.xxdb.data.BasicTable;
+
 import java.sql.*;
+import java.text.MessageFormat;
 
 public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
     public static final String DATABASE_NAME = "dolphindb";
     public static final String DRIVER_NAME = "dolphindb_jdbc";
     public static final String DRIVER_VERSION = "1.0";
+    private JDBCConnection connection;
+    private JDBCStatement statement;
+
+    public JDBCDataBaseMetaData(JDBCConnection connection, JDBCStatement statement){
+        this.connection = connection;
+        this.statement = statement;
+    }
 
     @Override
     public boolean allProceduresAreCallable() {
@@ -54,8 +64,14 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
     }
 
     @Override
-    public ResultSet getCatalogs() {
-        return null;
+    public ResultSet getCatalogs() throws SQLException{
+        try {
+            BasicTable basicTable = (BasicTable) connection.getDbConnection().run(MessageFormat.format("TABLE_CAT=(`{0},`{1});table(TABLE_CAT)", com.dolphindb.jdbc.Driver.DB,DATABASE_NAME));
+            return new JDBCResultSet(connection,statement,basicTable,"");
+        }catch (Exception e){
+            throw new SQLException(e);
+        }
+
     }
 
     @Override
