@@ -124,13 +124,15 @@ public class Main {
         TestResultSetInsert("t1 = loadTable(system_db,`t1)","select * from t1",o1,false);
         TestResultSetInsert("t1 = loadTable(system_db,`t1)","select * from t1",o1,true);
 
+        TestResultSetInsert("t1 = loadTable(system_db,`t1)","select bool from t1",new Object[]{true},true);
+
         TestResultSetUpdate("t1 = loadTable(system_db,`t1)","select * from t1",o1,false);
         TestResultSetUpdate("t1 = loadTable(system_db,`t1)","select * from t1",o1,true);
 
         TestResultSetDelete("t1 = loadTable(system_db,`t1)","select * from t1",2,false);
         TestResultSetDelete("t1 = loadTable(system_db,`t1)","select * from t1",2,true);
 
-        TestPreparedStatementBantch("t1 = loadTable(system_db,`t1)","select * from t1","insert into t1 values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",o3);
+        TestPreparedStatementBatch("t1 = loadTable(system_db,`t1)","select * from t1","insert into t1 values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",o3);
 
 
         String sql = "bool = [true, false];\n" +
@@ -225,15 +227,15 @@ public class Main {
     }
 
 
-    public static void TestPreparedStatement(String loadTable,String presql, Object[] objects) throws Exception{
+    public static void TestPreparedStatement(String loadTable,String preSql, Object[] objects) throws Exception{
         System.out.println("TestStatement begin");
 
         Connection conn = null;
         PreparedStatement stmt = null;
         try{
-            Class.forName("com.dolphindb.jdbc.Driver");
+            Class.forName(JDBC_DRIVER);
             conn = DriverManager.getConnection(DB_URL);
-            stmt = conn.prepareStatement(presql);
+            stmt = conn.prepareStatement(preSql);
             stmt.execute(loadTable);
             int index = 1;
             for(Object o: objects){
@@ -285,15 +287,15 @@ public class Main {
         System.out.println("TestPreparedStatement end");
     }
 
-    public static void TestPreparedStatementBantch(String loadTable,String select, String bantchsql, Object[] objects) throws Exception{
-        System.out.println("TestPreparedStatementBantch begin");
+    public static void TestPreparedStatementBatch(String loadTable, String select, String batchSql, Object[] objects) throws Exception{
+        System.out.println("TestPreparedStatementBatch begin");
 
         Connection conn = null;
         PreparedStatement stmt = null;
         try{
-            Class.forName("com.dolphindb.jdbc.Driver");
+            Class.forName(JDBC_DRIVER);
             conn = DriverManager.getConnection(DB_URL);
-            stmt = conn.prepareStatement(bantchsql);
+            stmt = conn.prepareStatement(batchSql);
             stmt.execute(loadTable);
             for(int i=0; i<objects.length; ++i){
                 int index = 1;
@@ -325,43 +327,7 @@ public class Main {
                 se.printStackTrace();
             }
         }
-        System.out.println("TestPreparedStatementBantch end");
-    }
-
-    public static void TestResultSetUpdate(String loadTable,String select, int row, HashMap<Integer,Object> hashMap) throws Exception{
-        System.out.println("TestResultSetUpdate begin");
-        Connection conn = null;
-        Statement stmt = null;
-        try{
-            Class.forName(JDBC_DRIVER);
-            conn = DriverManager.getConnection(DB_URL);
-            stmt = conn.createStatement();
-            stmt.execute(loadTable);
-            ResultSet rs = stmt.executeQuery(select);
-            rs.absolute(row);
-            for (int key : hashMap.keySet()){
-                rs.updateObject(key,hashMap.get(key));
-            }
-            rs.updateRow();
-            rs.beforeFirst();
-            printData(rs);
-            rs.close();
-            stmt.close();
-            conn.close();
-        }catch(Exception e){
-            e.printStackTrace();
-        }finally{
-            try{
-                if(stmt!=null) stmt.close();
-            }catch(SQLException se2){
-            }
-            try{
-                if(conn!=null) conn.close();
-            }catch(SQLException se){
-                se.printStackTrace();
-            }
-        }
-        System.out.println("TestResultSetUpdate end");
+        System.out.println("TestPreparedStatementBatch end");
     }
 
     public static void TestResultSetInsert(String loadTable, String select, Object[] objects, boolean isInsert) throws Exception{
@@ -415,7 +381,7 @@ public class Main {
         try{
             Class.forName(JDBC_DRIVER);
             conn = DriverManager.getConnection(DB_URL);
-            stmt = conn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
+            stmt = conn.createStatement();
             stmt.execute(loadTable);
             ResultSet rs = stmt.executeQuery(select);
             printData(rs);
@@ -456,7 +422,7 @@ public class Main {
         Statement stmt = null;
         try{
 
-            Class.forName("com.dolphindb.jdbc.Driver");
+            Class.forName(JDBC_DRIVER);
             conn = DriverManager.getConnection(DB_URL);
             stmt = conn.createStatement();
             stmt.execute(loadTable);

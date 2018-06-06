@@ -6,7 +6,10 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
+import java.util.Random;
 
 public class Utils {
     public static Object java2db(Object o){
@@ -100,4 +103,32 @@ public class Utils {
                 "group.*by|context.*by|pivot.*by";
         return !s1.matches(regex);
     }
+
+    public static String getRandomString(int length) { //length表示生成字符串的长度
+        String character = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String base = character + "0123456789";
+        Random random = new Random();
+        StringBuffer sb = new StringBuffer();
+        int number = random.nextInt(character.length());
+        sb.append(character.charAt(number));
+        for (int i = 1; i < length; i++) {
+            number = random.nextInt(base.length());
+            sb.append(base.charAt(number));
+        }
+        return sb.toString();
+    }
+
+    public static BasicTable Vevtor2Table(Vector vector,String sql) {
+        List<String> colNames = new ArrayList<>(1);
+        sql = sql.trim();
+        if (sql.contains("as")) {
+            colNames.add(sql.split(" ")[3]);
+        } else {
+            colNames.add(sql.split(" ")[1]);
+        }
+        List<Vector> cols = new ArrayList<>(1);
+        cols.add(vector);
+        return new BasicTable(colNames, cols);
+    }
+
 }
