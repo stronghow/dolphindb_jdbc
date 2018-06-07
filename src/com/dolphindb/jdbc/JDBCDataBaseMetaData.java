@@ -7,12 +7,14 @@ import java.text.MessageFormat;
 
 public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
-    public static final String DATABASE_NAME = "dolphindb";
-    public static final String DRIVER_NAME = "dolphindb_jdbc";
-    public static final String DRIVER_VERSION = "1.0";
+    private static final String DATABASE_NAME = "DolphinDB";
+    private static final String DRIVER_NAME = "DolphinDB JDBC Driver";
+    private static final String DRIVER_VERSION = "dolphindb-connector-java-1.0";
+    private static final String DATABASE = "database";
     private JDBCConnection connection;
     private JDBCStatement statement;
-
+    private static  String STRINGFUNCTIONS;
+    private static ResultSet TypeInfo;
     public JDBCDataBaseMetaData(JDBCConnection connection, JDBCStatement statement){
         this.connection = connection;
         this.statement = statement;
@@ -76,12 +78,12 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
     @Override
     public String getCatalogSeparator() {
-        return null;
+        return ".";
     }
 
     @Override
     public String getCatalogTerm() {
-        return DATABASE_NAME;
+        return DATABASE;
     }
 
     @Override
@@ -101,7 +103,7 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
     @Override
     public Connection getConnection() {
-        return null;
+        return connection;
     }
 
     @Override
@@ -111,12 +113,12 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
     @Override
     public int getDatabaseMajorVersion() {
-        return 0;
+        return Driver.V;
     }
 
     @Override
     public int getDatabaseMinorVersion() {
-        return 0;
+        return Driver.v;
     }
 
 
@@ -157,7 +159,7 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
     @Override
     public String getExtraNameCharacters() {
-        return null;
+        return "@";
     }
 
     @Override
@@ -167,7 +169,7 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
     @Override
     public String getIdentifierQuoteString() {
-        return null;
+        return "`";
     }
 
     @Override
@@ -182,7 +184,7 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
     @Override
     public int getJDBCMajorVersion() {
-        return 0;
+        return 1;
     }
 
     @Override
@@ -292,12 +294,12 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
     @Override
     public int getResultSetHoldability() {
-        return 0;
+        return ResultSet.HOLD_CURSORS_OVER_COMMIT;
     }
 
     @Override
     public int getSQLStateType() {
-        return 0;
+        return sqlStateXOpen;
     }
 
     @Override
@@ -361,13 +363,32 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
     }
 
     @Override
-    public ResultSet getTableTypes() {
-        return null;
+    public ResultSet getTableTypes() throws SQLException{
+        try {
+            BasicTable basicTable = (BasicTable) connection.getDbConnection().run(MessageFormat.format("TABLE_TYPE=[\"{0}\"];table(TABLE_TYPE)", "IN-MEMORY TABLE"));
+            return new JDBCResultSet(connection,statement,basicTable,"");
+        }catch (Exception e){
+            throw new SQLException(e);
+        }
     }
 
     @Override
     public ResultSet getTypeInfo() {
-        return null;
+        if(TypeInfo == null){
+            try {
+                BasicTable table = (BasicTable) connection.getDbConnection().run("SQL_DATA_TYPE = (VOID, BOOL, CHAR, SHORT, INT, LONG, DATE, MONTH, TIME, MINUTE, SECOND, DATETIME, TIMESTAMP, NANOTIME, NANOTIMESTAMP, FLOAT, DOUBLE, SYMBOL, STRING, ANY);\n" +
+                        "\n" +
+                        "TYPE_NAME = cast(SQL_DATA_TYPE, STRING);\n" +
+                        "\n" +
+                        "BYTES  = (1, 1, 1, 2, 4, 8, 4, 4, 4, 4, 4, 4, 8, 8, 8, 4, 8, 4, 0, 0);\n" +
+                        "\n" +
+                        "table(TYPE_NAME, SQL_DATA_TYPE, BYTES);");
+                TypeInfo = new JDBCResultSet(connection,statement,table,"");
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+        return TypeInfo;
     }
 
     @Override
@@ -387,57 +408,71 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
     @Override
     public String getDatabaseProductVersion() {
-        return null;
+        return DRIVER_VERSION + Driver.SYSTEM_PROPS.getProperty("os.name") + Driver.SYSTEM_PROPS.getProperty("os.version");
     }
 
     @Override
     public String getNumericFunctions() {
-        return null;
+        return "abs,acos,add,asin,atan,ceil,cos,det,div,dot,exp,floor,log,lshift,mod,mul,neg,polynomial,pow,prod,ratio,rshift,round,sin,sqrt,sub,tan";
     }
 
     @Override
     public String getProcedureTerm() {
-        return null;
+        return "PROCEDURE";
     }
 
     @Override
     public String getSchemaTerm() {
-        return null;
+        return "";
     }
 
     @Override
     public String getSearchStringEscape() {
-        return null;
+        return "\\";
     }
 
     @Override
     public String getSQLKeywords() {
-        return null;
+        return "";
     }
 
     @Override
     public String getStringFunctions() {
-        return null;
+        if(STRINGFUNCTIONS == null){
+            try {
+                BasicTable table = (BasicTable) connection.getDbConnection().run("defs()");
+                StringBuilder sb = new StringBuilder();
+                int rows = table.rows();
+                for(int i=0; i<rows; ++i){
+                    sb.append(table.getColumn(0).get(i)).append(",");
+                }
+                sb.delete(sb.length()-",".length(),sb.length());
+                STRINGFUNCTIONS = sb.toString();
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+        return STRINGFUNCTIONS;
     }
 
     @Override
     public String getSystemFunctions() {
-        return null;
+        return getStringFunctions();
     }
 
     @Override
     public String getTimeDateFunctions() {
-        return null;
+        return "convertTZ,date,datetime,datetimeParse,gmtime,hour,localtime,minute,month,monthStart,monthEnd,nanotime,nanotimestamp,second,temporalAdd,temporalParse,time,timestamp,year,weekday";
     }
 
     @Override
     public String getURL() {
-        return null;
+        return connection.getUrl();
     }
 
     @Override
     public String getUserName() {
-        return null;
+        return "";
     }
 
     @Override
@@ -527,7 +562,7 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
     @Override
     public boolean supportsColumnAliasing() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -557,7 +592,7 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
     @Override
     public boolean supportsExpressionsInOrderBy() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -567,7 +602,7 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
     @Override
     public boolean supportsGroupBy() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -577,7 +612,7 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
     @Override
     public boolean supportsGroupByBeyondSelect() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -587,7 +622,7 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
     @Override
     public boolean supportsMultipleResultSets() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -637,12 +672,12 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
     @Override
     public boolean supportsOuterJoins() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
     public boolean supportsFullOuterJoins() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -682,7 +717,7 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
     @Override
     public boolean supportsCatalogsInDataManipulation() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -747,7 +782,7 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
     @Override
     public boolean supportsCorrelatedSubqueries() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -852,7 +887,7 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
     @Override
     public boolean supportsBatchUpdates() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -862,7 +897,7 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
     @Override
     public boolean supportsNamedParameters() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -882,7 +917,7 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
     @Override
     public boolean locatorsUpdateCopy() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override

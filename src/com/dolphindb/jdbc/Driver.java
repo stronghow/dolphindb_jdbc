@@ -14,9 +14,10 @@ import java.util.logging.Logger;
 
 public class Driver implements java.sql.Driver {
     private static final String URL_PREFIX = "jdbc:dolphindb://";
-    public  static final String DB = "system_db";
-    static int V=1,v=0;
-    private static final Logger  logger = Logger.getLogger("dolphindb");
+    public static final String DB = "system_db";
+    public static final Properties SYSTEM_PROPS = System.getProperties();
+    public static final int V=1,v=0;
+    private static final Logger LOGGER = Logger.getLogger("dolphindb");
     static {
         try {
             DriverManager.registerDriver(new Driver());
@@ -58,7 +59,7 @@ public class Driver implements java.sql.Driver {
 
     @Override
     public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-        return logger;
+        return LOGGER;
     }
 
     public static boolean isValidURL(String url) {
@@ -69,11 +70,12 @@ public class Driver implements java.sql.Driver {
     public Connection createConnection(String url, Properties prop) throws SQLException {
         if (!isValidURL(url)) new SQLException("url is not valid");
         System.out.println(url);
+        String old_url = url;
         url = url.trim().substring(URL_PREFIX.length());
         if(url.length()==0||url.equals("?")){
             prop.setProperty("hostName","localhost");
             prop.setProperty("port","8848");
-            return new JDBCConnection(prop);
+            return new JDBCConnection(old_url,prop);
         }else{
             String[] strings = url.split("\\?");
             if(strings.length == 1){
@@ -112,7 +114,7 @@ public class Driver implements java.sql.Driver {
                     Utils.parseProperties(s2,prop,"&","=");
                 }
             }
-            return new JDBCConnection(prop);
+            return new JDBCConnection(old_url,prop);
         }
     }
 

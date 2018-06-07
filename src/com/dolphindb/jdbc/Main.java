@@ -160,6 +160,8 @@ public class Main {
 //
 //        TestStatementExecute(DB_URL_DFS1,"select  top 10 * from pt");
 
+//        TestDatabaseMetaData(DB_URL1,"");
+
     }
 
     public static void CreateTable(String file,String savePath,String tableName){
@@ -463,6 +465,67 @@ public class Main {
             }
         }
         System.out.println("TestResultSetDelete end");
+    }
+
+    public static void TestDatabaseMetaData(String url,String sql) throws Exception{
+        System.out.println("TestStatementExecute begin");
+        Connection conn = null;
+        Statement stmt = null;
+        try{
+            Class.forName(JDBC_DRIVER);
+            conn = DriverManager.getConnection(url);
+            stmt = conn.createStatement();
+            ResultSet rs = null;
+            DatabaseMetaData metaData = conn.getMetaData();
+            rs = metaData.getCatalogs();
+            printData(rs);
+            String s = metaData.getCatalogSeparator();
+            System.out.println(s);
+            s = metaData.getCatalogTerm();
+            System.out.println(s);
+            s = metaData.getDatabaseProductName();
+            System.out.println(s);
+            s = metaData.getDatabaseProductVersion();
+            System.out.println(s);
+            s = metaData.getDriverName();
+            System.out.println(s);
+            System.out.println(metaData.getDriverVersion());
+            System.out.println(metaData.getExtraNameCharacters());
+            System.out.println(metaData.getIdentifierQuoteString());
+            System.out.println(metaData.getJDBCMajorVersion());
+            System.out.println(metaData.getJDBCMinorVersion());
+            System.out.println(metaData.getMaxBinaryLiteralLength());
+            System.out.println(metaData.getMaxCatalogNameLength());
+            System.out.println(metaData.getMaxColumnNameLength());
+            System.out.println(metaData.getNumericFunctions());
+            System.out.println(metaData.getProcedureTerm());
+            System.out.println(metaData.getResultSetHoldability());
+            System.out.println(metaData.getSchemaTerm());
+            System.out.println(metaData.getSearchStringEscape());
+            System.out.println("getSQLKeywords() = "+metaData.getSQLKeywords());
+            System.out.println("getSQLStateType() = " +metaData.getSQLStateType());
+            System.out.println("getStringFunctions() =" +metaData.getStringFunctions());
+            System.out.println("getSystemFunctions() = " +metaData.getSystemFunctions());
+            printData(metaData.getTableTypes());
+            System.out.println("getTimeDateFunctions() = " + metaData.getTimeDateFunctions());
+            printData(metaData.getTypeInfo());
+            System.out.println("getURL() = " + metaData.getURL());
+            stmt.close();
+            conn.close();
+        }catch(Exception e){
+            e.printStackTrace();
+        }finally{
+            try{
+                if(stmt!=null) stmt.close();
+            }catch(SQLException se2){
+            }
+            try{
+                if(conn!=null) conn.close();
+            }catch(SQLException se){
+                se.printStackTrace();
+            }
+        }
+        System.out.println("TestStatementExecute end");
     }
 
     public static void printData(ResultSet rs) throws SQLException{

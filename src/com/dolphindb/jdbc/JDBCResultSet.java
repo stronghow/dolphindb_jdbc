@@ -46,13 +46,12 @@ public class JDBCResultSet implements ResultSet{
         sql = sql.replaceAll("\n","").trim();
         this.conn = conn;
         this.statement = statement;
-        //this.tableName = Utils.getRandomString(5);       //Utils.getTableName(sql);
 
-         if(entity.isTable()){
+        if(entity.isTable()){
             this.table = (BasicTable) entity;
-         }else{
+        }else{
             throw new SQLException("ResultSet data is null");
-         }
+        }
         rows = this.table.rows();
 
         findColumnHashMap = new HashMap<>(this.table.columns());
@@ -63,22 +62,22 @@ public class JDBCResultSet implements ResultSet{
             findColumnHashMap.put(this.table.getColumnName(i),i+1);
         }
 
-//        run(tableName + " = " + sql);
-//        String s = run("typestr " + tableName).getString();
-//        System.out.println(s);
-
-        this.isUpdateable = Utils.isUpdateable(sql);
-
-        if(this.isUpdateable){
-            this.tableName = Utils.getTableName(sql);
-            if(Utils.isUpdateable(this.tableName)){
-                String s = run("typestr " + tableName).getString();
-                if(!s.equals("IN-MEMORY TABLE")){
-                    this.isUpdateable = false;
-                }
-            }
+        if(sql == null || sql.length() == 0){
+            this.isUpdateable = false;
         }else{
-            this.tableName = "";
+            this.isUpdateable = Utils.isUpdateable(sql);
+
+            if(this.isUpdateable){
+                this.tableName = Utils.getTableName(sql);
+                if(Utils.isUpdateable(this.tableName)){
+                    String s = run("typestr " + tableName).getString();
+                    if(!s.equals("IN-MEMORY TABLE")){
+                        this.isUpdateable = false;
+                    }
+                }
+            }else{
+                this.tableName = "";
+            }
         }
 
         System.out.println(table.rows() + "  "+ table.columns());
@@ -1306,20 +1305,29 @@ public class JDBCResultSet implements ResultSet{
     }
 
 
-    private void insert(int columnIndex, Object value) throws SQLException{
+    private void insert(int columnIndex, Object value) throws SQLException {
         checkClosed();
-        if(value instanceof LocalDate || value instanceof LocalTime || value instanceof LocalDateTime|| value instanceof YearMonth ||
-                value instanceof Date || value instanceof Time || value instanceof Timestamp ||
-                value instanceof BasicDate || value instanceof BasicDateVector ||
-                value instanceof BasicTime || value instanceof BasicTimeVector ||
-                value instanceof BasicMinute || value instanceof BasicMinuteVector ||
-                value instanceof BasicSecond || value instanceof BasicDate ||
-                value instanceof BasicNanoTime || value instanceof BasicDate ||
-                value instanceof BasicTimestamp || value instanceof BasicDate ||
-                value instanceof BasicDateTime || value instanceof BasicDate ||
-                value instanceof BasicNanoTimestamp || value instanceof BasicNanoTimestampVector){
-            insertDateTime(columnIndex,value);
-        }else if(value instanceof Boolean || value instanceof BasicBoolean || value instanceof BasicBooleanVector ||
+        if (!insertDateTime(columnIndex, value)) {
+            if (!insertBasicType(columnIndex, value)) {
+                if (value instanceof Scalar) {
+                    insertRowMap.put(columnIndex, (Scalar) value);
+                } else if (value instanceof Vector) {
+                    insertRowMap.put(columnIndex, (Vector) value);
+                } else {
+                    throw new SQLException("only supports LocalDate  LocalTime  LocalDateTime YearMonth  Date Time Timestamp boolean int char short long float double string scalar vector");
+                }
+            }
+        }
+    }
+
+
+    private boolean insertBasicType(String name, Object value) throws SQLException{
+        return insertDateTime(findColumn(name),value);
+    }
+
+    private boolean insertBasicType(int columnIndex, Object value) throws SQLException{
+        String s=null;
+        if(value instanceof Boolean || value instanceof BasicBoolean || value instanceof BasicBooleanVector ||
                 value instanceof Byte || value instanceof BasicByte || value instanceof BasicByteVector ||
                 value instanceof Character ||
                 value instanceof Integer || value instanceof BasicInt || value instanceof BasicIntVector ||
@@ -1327,33 +1335,24 @@ public class JDBCResultSet implements ResultSet{
                 value instanceof Long || value instanceof BasicLong || value instanceof BasicLongVector ||
                 value instanceof Float || value instanceof BasicFloat || value instanceof BasicFloatVector ||
                 value instanceof Double || value instanceof BasicDouble || value instanceof BasicDoubleVector ||
-                value instanceof String || value instanceof BasicString || value instanceof BasicStringVector ){
-            insertBasicType(columnIndex,value);
-        }else if(value instanceof Scalar){
-            insertRowMap.put(columnIndex,(Scalar) value);
-        }else if(value instanceof Vector) {
-            insertRowMap.put(columnIndex,(Vector) value);
-        }else {
-            throw new SQLException("only supports boolean int char short long float double string scalar vector");
+                value instanceof String || value instanceof BasicString || value instanceof BasicStringVector){
+            s = Utils.java2db(value).toString();
+        }
+        if(s == null){
+            return false;
+        }else{
+            Vector vector = table.getColumn(adjustColumnIndex(columnIndex));
+            insertRowMap.put(columnIndex,basicTypeCast(s,vector));
+            return true;
         }
     }
 
-    private void insertBasicType(String name, Object value) throws SQLException{
-        insertDateTime(findColumn(name),value);
+
+    private boolean insertDateTime(String name, Object value) throws SQLException{
+        return insertDateTime(findColumn(name),value);
     }
 
-    private void insertBasicType(int columnIndex, Object value) throws SQLException{
-        Vector vector = table.getColumn(adjustColumnIndex(columnIndex));
-        String s = Utils.java2db(value).toString();
-        insertRowMap.put(columnIndex,basicTypeCast(s,vector));
-    }
-
-
-    private void insertDateTime(String name, Object value) throws SQLException{
-        insertDateTime(findColumn(name),value);
-    }
-
-    private void insertDateTime(int columnIndex, Object value) throws SQLException{
+    private boolean insertDateTime(int columnIndex, Object value) throws SQLException{
         Vector vector = table.getColumn(adjustColumnIndex(columnIndex));
         String s=null;
         if(value instanceof Date){
@@ -1370,7 +1369,8 @@ public class JDBCResultSet implements ResultSet{
             s = new BasicNanoTimestamp((LocalDateTime) value).getString();
         }else if(value instanceof YearMonth){
             s = new BasicMonth((YearMonth) value).getString();
-        }else if(value instanceof BasicDate || value instanceof BasicDateVector ||
+        }else if(value instanceof BasicMonth || value instanceof  BasicMonthVector ||
+                 value instanceof BasicDate || value instanceof BasicDateVector ||
                  value instanceof BasicTime || value instanceof BasicTimeVector ||
                  value instanceof BasicMinute || value instanceof BasicMinuteVector ||
                  value instanceof BasicSecond || value instanceof BasicSecondVector ||
@@ -1380,10 +1380,12 @@ public class JDBCResultSet implements ResultSet{
                  value instanceof BasicNanoTimestamp || value instanceof BasicNanoTimestampVector){
             s = ((Entity) value).getString();
         }
-        if(s == null){
-            throw new SQLException("can not cast dataTime");
+        if(s==null){
+            return false;
+        }else {
+            insertRowMap.put(columnIndex, timeDateCast(s, vector));
+            return true;
         }
-        insertRowMap.put(columnIndex,dateTimeCast(s,vector));
     }
 
     private Entity basicTypeCast(String s,Entity entity) throws SQLException{
@@ -1408,8 +1410,10 @@ public class JDBCResultSet implements ResultSet{
         }
     }
 
-    private Entity dateTimeCast(String s,Entity entity) throws SQLException{
-        if(entity instanceof BasicDateVector){
+    private Entity timeDateCast(String s, Entity entity) throws SQLException{
+        if(entity instanceof  BasicMonthVector){
+            return run(MessageFormat.format("cast({0},MONTH)",s));
+        }else if(entity instanceof BasicDateVector){
             return run(MessageFormat.format("cast({0},DATE)",s));
         }else if(entity instanceof BasicTimeVector){
             return run(MessageFormat.format("cast({0},TIME)",s));
@@ -1426,7 +1430,7 @@ public class JDBCResultSet implements ResultSet{
         }else if(entity instanceof BasicNanoTimestampVector){
             return run(MessageFormat.format("cast({0},NANOTIMESTAMP)",s));
         }else{
-            throw new SQLException("can not cast dataTime");
+            throw new SQLException("can not cast timeData");
         }
     }
 
