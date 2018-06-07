@@ -11,16 +11,35 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
 public class JDBCPrepareStatement extends JDBCStatement implements PreparedStatement {
+
+    private String tableName;
+
+    private Entity tableNameArg;
+
+    private List<Entity> arguments;
+
+    private boolean isInsert = false;
 
     public JDBCPrepareStatement(JDBCConnection connection, String sql){
         super(connection);
         this.connection = connection;
         this.sql = sql.trim();
+        if(this.sql.startsWith("insert")){
+            tableName = sql.substring(sql.indexOf("into") + "into".length(), sql.indexOf("values"));
+            isInsert = true;
+        }else if(this.sql.startsWith("tableInsert")){
+            tableName = sql.substring(sql.indexOf("(") + "(".length(), sql.indexOf(","));
+            isInsert = true;
+        }
+        tableNameArg = new BasicString(tableName);
         sqlSplit = this.sql.split("\\?");
         values = new Object[sqlSplit.length+1];
+        arguments = new ArrayList<>(sqlSplit.length+1);
         batch = new StringBuilder();
     }
 
@@ -172,8 +191,28 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
     @Override
     public boolean execute() throws SQLException {
         super.checkClosed();
-        String s = createSql();
-        return super.execute(s);
+        try {
+            if(isInsert){
+                createArguments();
+                BasicInt basicInt = (BasicInt) connection.getDbConnection().run("tableInsert",arguments);
+                objectQueue.offer(basicInt.getInt());
+                if(objectQueue.isEmpty()){
+                    return false;
+                }else {
+                    result = objectQueue.poll();
+                    if(result instanceof ResultSet){
+                        return true;
+                    }else{
+                        return false;
+                    }
+                }
+            }else{
+                String s = createSql();
+                return super.execute(s);
+            }
+        }catch (Exception e){
+            throw new SQLException(e);
+        }
     }
 
     @Override
@@ -380,13 +419,20 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
     }
 
 
+    private void createArguments(){
+        arguments.add(tableNameArg);
+        for(int i = 1; i< sqlSplit.length; ++i){
+            arguments.add((Entity) values[i]);
+        }
+    }
 
 
 
     private String createSql(){
         StringBuilder sb = new StringBuilder();
         for(int i = 1; i< sqlSplit.length; ++i){
-            sb.append(sqlSplit[i-1]).append(Utils.java2db(values[i]));
+            String s = Utils.java2db(values[i]).toString();
+            sb.append(sqlSplit[i-1]).append(s);
         }
         sb.append(sqlSplit[sqlSplit.length-1]);
         return sb.toString();
