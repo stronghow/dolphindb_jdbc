@@ -3,6 +3,7 @@ package com.dolphindb.jdbc;
 import com.xxdb.data.*;
 
 import java.sql.Date;
+import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.YearMonth;
@@ -68,12 +69,19 @@ public class Utils {
         sb.delete(sb.length() - join.length(),sb.length());
     }
 
-    public static void parseProperties(String s, Properties prop, String split1, String split2){
+    public static void parseProperties(String s, Properties prop, String split1, String split2) throws SQLException {
         String[] strings1 = s.split(split1);
         String[] strings2;
         for (String item : strings1){
-            strings2 = item.split(split2);
-            prop.setProperty(strings2[0],strings2[1]);
+            if(item.length()>0) {
+                strings2 = item.split(split2);
+                if(strings2.length == 2) {
+                    if(strings2[0].length()==0) throw new SQLException(item + "     is error");
+                    prop.setProperty(strings2[0], strings2[1]);
+                }else {
+                    throw new SQLException(item + "     is error");
+                }
+            }
         }
     }
 

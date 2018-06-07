@@ -19,9 +19,12 @@ public  class JDBCConnection implements Connection {
     private boolean success;
     private Vector databases;
     private HashMap<String,Boolean> loadTable;
+    private String url;
+    private DatabaseMetaData metaData;
 
 
-    public JDBCConnection(Properties prop) throws SQLException{
+    public JDBCConnection(String url,Properties prop) throws SQLException{
+        this.url = url;
         dbConnection = new DBConnection();
         hostName = prop.getProperty("hostName");
         port = Integer.parseInt(prop.getProperty("port"));
@@ -124,8 +127,11 @@ public  class JDBCConnection implements Connection {
 
     @Override
     public DatabaseMetaData getMetaData() throws SQLException {
-        //Driver.unused("getMetaData()");
-        return null;
+        checkIsClosed();
+        if(metaData == null){
+            metaData  = new JDBCDataBaseMetaData(this,null);
+        }
+        return metaData;
     }
 
     @Override
@@ -380,5 +386,8 @@ public  class JDBCConnection implements Connection {
     public DBConnection getDbConnection() {
         return dbConnection;
     }
-    
+
+    public String getUrl() {
+        return url;
+    }
 }
