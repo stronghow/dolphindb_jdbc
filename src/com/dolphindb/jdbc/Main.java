@@ -11,7 +11,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class Main {
     private static final String JDBC_DRIVER = "com.dolphindb.jdbc.Driver";
@@ -131,7 +133,7 @@ public class Main {
 //
 //
 //        TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,false);
-        TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,true);
+//        TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,true);
 //
 //        TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select bool,char from ej(t1, t1, `bool)",new Object[]{true,'a'},true);
 //
@@ -145,9 +147,9 @@ public class Main {
 //
 //
 //
-//        TestResultSetInsert(DB_URL_DFS,"pt = loadTable(system_db,`pt)","select top 10 * from pt",new Object[]{new BasicMonth(YearMonth.parse("2016-07")),0.007},true);
+//        TestResultSetInsert(DB_URL_DFS,"pt = loadTable(system_db,`pt)","select top 10 * from pt",new Object[]{new BASIC_MONTH(YearMonth.parse("2016-07")),0.007},true);
 //
-//        TestResultSetUpdate(DB_URL_DFS,"pt = loadTable(system_db,`pt)","select top 10 * from pt",new Object[]{new BasicMonth(YearMonth.parse("2016-07")),0.007},true);
+//        TestResultSetUpdate(DB_URL_DFS,"pt = loadTable(system_db,`pt)","select top 10 * from pt",new Object[]{new BASIC_MONTH(YearMonth.parse("2016-07")),0.007},true);
 //
 //        TestResultSetDelete(DB_URL_DFS,"pt = loadTable(system_db,`pt)","select top 10 * from pt",1,true);
 //
@@ -161,6 +163,9 @@ public class Main {
 //        TestStatementExecute(DB_URL_DFS1,"select  top 10 * from pt");
 
 //        TestDatabaseMetaData(DB_URL1,"");
+
+        TestPreparedStatementInsert();
+
 
     }
 
@@ -537,5 +542,102 @@ public class Main {
             }
             System.out.print("\n");
         }
+    }
+
+    public static void TestPreparedStatementInsert() throws Exception{
+        System.out.println("TestStatement begin");
+
+        Connection conn = null;
+        PreparedStatement stmt = null;
+
+        DBConnection dbConnection = new DBConnection();
+        dbConnection.connect("127.0.0.1",8848);
+        BasicIntVector entity1 = (BasicIntVector)dbConnection.run("1..10000000");
+        List<Entity> entities = new ArrayList<>(5);
+        //entities.add(new BasicString("t1"));
+        for(int i =0; i< 4; i++){
+            entities.add(entity1);
+        }
+
+//        dbConnection.run("t1 = table(1 as a, 2 as b, 3 as c, 4 as d)");
+//        dbConnection.run("tableInsert",entities);
+
+
+
+        try{
+            Class.forName(JDBC_DRIVER);
+            conn = DriverManager.getConnection(DB_URL1);
+            stmt = conn.prepareStatement("tableInsert(t1,?,?,?,?)");
+            stmt.execute("t1 = table(1 as a, 2 as b, 3 as c, 4 as d)");
+            int index = 1;
+            for(Entity entity: entities){
+                stmt.setObject(index,entity);
+                ++index;
+            }
+            ResultSet rs = null;
+            int UpdateCount = -1;
+            long time = System.currentTimeMillis();
+            if(stmt.execute()){
+                rs = stmt.getResultSet();
+                printData(rs);
+            }else {
+                UpdateCount =  stmt.getUpdateCount();
+                if(UpdateCount != -1) {
+                    System.out.println(UpdateCount + " row affected");
+                }
+            }
+            System.out.println(System.currentTimeMillis() - time + "ms");
+            while (true){
+                if(stmt.getMoreResults()){
+                    rs =  stmt.getResultSet();
+                    printData(rs);
+                }else{
+                    UpdateCount =  stmt.getUpdateCount();
+                    if(UpdateCount != -1) {
+                        System.out.println(UpdateCount + "row affected");
+                    }else{
+                        break;
+                    }
+                }
+            }
+            if(rs != null) {
+                rs.close();
+            }
+            rs = stmt.executeQuery("select * from t1");
+
+            rs.last();
+
+            System.out.println("this ==> " +rs.getRow());
+
+            rs.moveToInsertRow();
+            for(int i =1; i<= 4; ++i){
+                rs.updateObject(i,entities.get(i-1));
+            }
+            time = System.currentTimeMillis();
+            rs.insertRow();
+            System.out.println(System.currentTimeMillis()-time+"ms");
+            rs.last();
+
+            System.out.println("that ==> " +rs.getRow());
+            //printData(rs);
+            if(rs != null) {
+                rs.close();
+            }
+            stmt.close();
+            conn.close();
+        }catch(Exception e){
+            e.printStackTrace();
+        }finally{
+            try{
+                if(stmt!=null) stmt.close();
+            }catch(SQLException se2){
+            }
+            try{
+                if(conn!=null) conn.close();
+            }catch(SQLException se){
+                se.printStackTrace();
+            }
+        }
+        System.out.println("TestPreparedStatement end");
     }
 }

@@ -16,7 +16,8 @@ import java.util.regex.Pattern;
 
 public class Utils {
     public static Object java2db(Object o){
-        if(o instanceof BasicStringVector || o instanceof BasicAnyVector || o instanceof Vector){
+        System.out.println(o instanceof Entity);
+        if(o instanceof BasicStringVector || o instanceof BasicAnyVector || o instanceof AbstractVector || o instanceof Vector){
             String s = ((Vector)o).getString();
             if(((Vector) o).get(0) instanceof BasicString){
                 return dbVectorString(s);
@@ -39,9 +40,7 @@ public class Utils {
             return new BasicTimestamp(((Timestamp) o).toLocalDateTime());
         }else if(o instanceof YearMonth){
             return new BasicMonth((YearMonth)o);
-        }else if(o instanceof Vector){
-            return ((Vector) o).getString();
-        }else{
+        }else {
             return  o;
         }
 

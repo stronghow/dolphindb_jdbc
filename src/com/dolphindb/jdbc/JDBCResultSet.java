@@ -1315,7 +1315,7 @@ public class JDBCResultSet implements ResultSet{
     private void insert(int columnIndex, Object value) throws SQLException {
         checkClosed();
         if (!insertDateTime(columnIndex, value)) {
-            if (!insertBasicType(columnIndex, value)) {
+            if(!insertBasicType(columnIndex,value)) {
                 if (value instanceof Scalar) {
                     insertRowMap.put(columnIndex, (Scalar) value);
                 } else if (value instanceof Vector) {
@@ -1327,79 +1327,103 @@ public class JDBCResultSet implements ResultSet{
         }
     }
 
-
     private boolean insertBasicType(String name, Object value) throws SQLException{
         return insertDateTime(findColumn(name),value);
     }
 
-    private boolean insertBasicType(int columnIndex, Object value) throws SQLException{
-        Vector vector = table.getColumn(adjustColumnIndex(columnIndex));
+    private boolean insertBasicType(int columnIndex, Object srcValue) throws SQLException{
+        Vector targetVector = table.getColumn(adjustColumnIndex(columnIndex));
+        Scalar targetScalar = targetVector.get(row);
         try {
             String s = null;
-            if(value instanceof Scalar){
-                if(value instanceof BasicBoolean ||
-                        value instanceof BasicByte ||
-                        value instanceof BasicInt ||
-                        value instanceof  BasicShort ||
-                        value instanceof BasicLong ||
-                        value instanceof BasicFloat ||
-                        value instanceof BasicDouble ||
-                        value instanceof BasicString){
-                    s = ((Entity) value).getString();
-                }
-                if(s == null){
-                    return false;
-                }else{
-                    insertRowMap.put(columnIndex,basicTypeCast(s,vector));
+            if(srcValue instanceof Scalar){
+                if(srcValue.getClass().getName().equals(targetScalar.getClass().getName())){
+                    insertRowMap.put(columnIndex,(Scalar)srcValue);
                     return true;
                 }
-            }else if(value instanceof Vector){
-                int size = ((Vector) value).rows();
-                if(size == 0) throw  new SQLException("Vector size can not 0");
-                List<String> strings = null;
-                if(value instanceof BasicBooleanVector){
-                    strings = new ArrayList<>(size);
-                    for(int i=0; i<size; ++i){
-                        strings.add((((BasicBooleanVector) value).get(i)).getString());
+                if(srcValue instanceof BasicBoolean ||
+                        srcValue instanceof BasicByte ||
+                        srcValue instanceof BasicInt ||
+                        srcValue instanceof  BasicShort ||
+                        srcValue instanceof BasicLong ||
+                        srcValue instanceof BasicFloat ||
+                        srcValue instanceof BasicDouble){
+
+
+                    if(targetScalar instanceof BasicBoolean ||
+                            targetScalar instanceof BasicByte ||
+                            targetScalar instanceof BasicInt ||
+                            targetScalar instanceof  BasicShort ||
+                            targetScalar instanceof BasicLong ||
+                            targetScalar instanceof BasicFloat ||
+                            targetScalar instanceof BasicDouble ||
+                            targetScalar instanceof BasicString){
+                        insertRowMap.put(columnIndex,(Scalar)srcValue);
+                        return true;
+                    }else{
+                        throw new SQLException(srcValue.getClass().getName() + "can not cast " + targetScalar.getClass().getName());
                     }
-                }else if(value instanceof BasicByteVector){
-                    strings = new ArrayList<>(size);
-                    for(int i=0; i<size; ++i){
-                        strings.add((((BasicByteVector) value).get(i)).getString());
+                }else if(srcValue instanceof BasicString){
+
+                    if(targetScalar instanceof BasicString){
+                        insertRowMap.put(columnIndex,(Scalar)srcValue);
+                        return true;
+                    }else{
+                        throw new SQLException(srcValue.getClass().getName() + "can not cast " + targetScalar.getClass().getName());
                     }
-                }else if(value instanceof BasicIntVector){
-                    strings = new ArrayList<>(size);
-                    for(int i=0; i<size; ++i){
-                        strings.add((((BasicIntVector) value).get(i)).getString());
-                    }
-                }else if(value instanceof BasicShortVector){
-                    strings = new ArrayList<>(size);
-                    for(int i=0; i<size; ++i){
-                        strings.add((((BasicShortVector) value).get(i)).getString());
-                    }
-                }else if(value instanceof BasicLongVector){
-                    strings = new ArrayList<>(size);
-                    for(int i=0; i<size; ++i){
-                        strings.add((((BasicFloatVector) value).get(i)).getString());
-                    }
-                }else if(value instanceof BasicDoubleVector){
-                    strings = new ArrayList<>(size);
-                    for(int i=0; i<size; ++i){
-                        strings.add((((BasicStringVector) value).get(i)).getString());
-                    }
-                }
-                if(strings == null){
-                    return false;
                 }else{
-                    insertRowMap.put(columnIndex,basicTypeVectorCast(strings,vector));
+
+                    throw new SQLException(srcValue.getClass().getName() + "can not cast " + targetScalar.getClass().getName());
+                }
+            }else if(srcValue instanceof Vector){
+                int size = ((Vector) srcValue).rows();
+                if(size == 0) throw  new SQLException("Vector size can not 0");
+                if(srcValue.getClass().getName().equals(targetVector.getClass().getName())){
+                    insertRowMap.put(columnIndex,(Vector)srcValue);
                     return true;
                 }
 
-            }else if(value instanceof List){
-                int size = ((List) value).size();
+                Scalar srcValue_ = ((Vector) srcValue).get(0);
+
+                if(srcValue_ instanceof BasicBoolean ||
+                        srcValue_ instanceof BasicByte ||
+                        srcValue_ instanceof BasicInt ||
+                        srcValue_ instanceof  BasicShort ||
+                        srcValue_ instanceof BasicLong ||
+                        srcValue_ instanceof BasicFloat ||
+                        srcValue_ instanceof BasicDouble){
+
+
+                    if(targetScalar instanceof BasicBoolean ||
+                            targetScalar instanceof BasicByte ||
+                            targetScalar instanceof BasicInt ||
+                            targetScalar instanceof  BasicShort ||
+                            targetScalar instanceof BasicLong ||
+                            targetScalar instanceof BasicFloat ||
+                            targetScalar instanceof BasicDouble ||
+                            targetScalar instanceof BasicString){
+                        insertRowMap.put(columnIndex,(Vector)srcValue);
+                        return true;
+                    }else{
+                        throw new SQLException(srcValue_.getClass().getName() + "can not cast " + targetScalar.getClass().getName());
+                    }
+                }else if(srcValue_ instanceof BasicString){
+
+                    if(targetScalar instanceof BasicString){
+                        insertRowMap.put(columnIndex,(Vector)srcValue);
+                        return true;
+                    }else{
+                        throw new SQLException(srcValue_.getClass().getName() + "can not cast " + targetScalar.getClass().getName());
+                    }
+                }else{
+                    throw new SQLException(srcValue.getClass().getName() + "can not cast " + targetScalar.getClass().getName());
+                }
+
+            }else if(srcValue instanceof List){
+                int size = ((List) srcValue).size();
                 if(size == 0) throw new SQLException("List size can not 0");
-                Object o = ((List) value).get(0);
-                List value_ = (List) value;
+                Object o = ((List) srcValue).get(0);
+                List value_ = (List) srcValue;
                 List<String> strings = null;
                 if(o instanceof Boolean){
                     strings = new ArrayList<>(size);
@@ -1447,19 +1471,19 @@ public class JDBCResultSet implements ResultSet{
                         strings.add(((String) value_.get(i)));
                     }
                 }else if(o instanceof Scalar){
-                    throw new SQLException("you need use com.xxdb.data.Vector");
+                    throw new SQLException("you need use com.xxdb.data.Vector load com.xxdb.data.Scalar");
                 }
                 if(strings == null){
                     return false;
                 }else{
-                    insertRowMap.put(columnIndex,basicTypeVectorCast(strings,vector));
+                    insertRowMap.put(columnIndex,basicTypeVectorCast(strings,targetVector));
                     return true;
                 }
-            }else if(value instanceof Object[]){
-                int size = ((Object[]) value).length;
+            }else if(srcValue instanceof Object[]){
+                int size = ((Object[]) srcValue).length;
                 if(size == 0) throw new SQLException("Object[] size can not 0");
-                Object o = ((Object[]) value)[0];
-                Object[] value_ = (Object[]) value;
+                Object o = ((Object[]) srcValue)[0];
+                Object[] value_ = (Object[]) srcValue;
                 List<String> strings = null;
                 if(o instanceof Boolean){
                     strings = new ArrayList<>(size);
@@ -1507,24 +1531,24 @@ public class JDBCResultSet implements ResultSet{
                         strings.add(((String) value_[i]));
                     }
                 }else if(o instanceof Scalar){
-                    throw new SQLException("you need use com.xxdb.data.Vector");
+                    throw new SQLException("you need use com.xxdb.data.Vector load com.xxdb.data.Scalar");
                 }
                 if(strings == null){
                     return false;
                 }else{
-                    insertRowMap.put(columnIndex,basicTypeVectorCast(strings,vector));
+                    insertRowMap.put(columnIndex,basicTypeVectorCast(strings,targetVector));
                     return true;
                 }
-            }else if(value instanceof Boolean || value instanceof Byte || value instanceof Character ||
-                    value instanceof Short || value instanceof Integer || value instanceof Long ||
-                    value instanceof Float || value instanceof Double || value instanceof String){
-                s = value.toString();
+            }else if(srcValue instanceof Boolean || srcValue instanceof Byte || srcValue instanceof Character ||
+                    srcValue instanceof Short || srcValue instanceof Integer || srcValue instanceof Long ||
+                    srcValue instanceof Float || srcValue instanceof Double || srcValue instanceof String){
+                s = srcValue.toString();
             }
 
             if(s==null){
                 return false;
             }else {
-                insertRowMap.put(columnIndex, basicTypeCast(s, vector));
+                insertRowMap.put(columnIndex, basicTypeCast(s, targetVector));
                 return true;
             }
         }catch (Exception e){
@@ -1533,90 +1557,83 @@ public class JDBCResultSet implements ResultSet{
     }
 
 
+
     private boolean insertDateTime(String name, Object value) throws SQLException{
         return insertDateTime(findColumn(name),value);
     }
 
     private boolean insertDateTime(int columnIndex, Object value) throws SQLException{
-        Vector vector = table.getColumn(adjustColumnIndex(columnIndex));
+        if(value == null) throw new SQLException("can not insert null");
+        Entity entity = table.getColumn(adjustColumnIndex(columnIndex));
+        String srcClassName = value.getClass().getName();
         try {
             Temporal temporal=null;
             if(value instanceof Scalar){
-                if(value instanceof BasicMonth){
-                    temporal = ((BasicMonth) value).getTemporal();
-                }else if(value instanceof BasicDate){
-                    temporal = ((BasicDate) value).getTemporal();
-                }else if(value instanceof BasicTime){
-                    temporal = ((BasicTime) value).getTemporal();
-                }else if(value instanceof BasicMinute){
-                    temporal = ((BasicMinute) value).getTemporal();
-                }else if(value instanceof BasicSecond){
-                    temporal = ((BasicSecond) value).getTemporal();
-                }else if(value instanceof BasicNanoTime){
-                    temporal = ((BasicNanoTime) value).getTemporal();
-                }else if(value instanceof BasicTimestamp){
-                    temporal = ((BasicTimestamp) value).getTemporal();
-                }else if(value instanceof BasicDateTime){
-                    temporal = ((BasicDateTime) value).getTemporal();
-                }else if(value instanceof BasicNanoTimestamp){
-                    temporal = ((BasicNanoTimestamp) value).getTemporal();
+                Scalar scalar = ((Vector) entity).get(row);
+                if(srcClassName.equals(scalar.getClass().getName())){
+                    insertRowMap.put(columnIndex, scalar);
+                    return true;
                 }
+                temporal = TypeCast.getTemporal(scalar);
                 if(temporal == null){
                     return false;
                 }else{
-                    insertRowMap.put(columnIndex, DataTimeCast(temporal, vector));
+                    insertRowMap.put(columnIndex, TypeCast.DataTimeCast(temporal, srcClassName, scalar));
                     return true;
                 }
             }else if(value instanceof Vector){
                 int size = ((Vector) value).rows();
                 if(size == 0) throw  new SQLException("Vector size can not 0");
-                List<Temporal> temporals;
-                if(value instanceof BasicMonthVector){
+                List<Temporal> temporals = null;
+                if(srcClassName.equals(entity.getClass().getName())){
+                    insertRowMap.put(columnIndex, entity);
+                    return true;
+                }else if(value instanceof BasicMonthVector){
                     temporals = new ArrayList<>(size);
                     for(int i=0; i<size; ++i){
                         temporals.add((((BasicMonthVector) value).get(i)).getTemporal());
                     }
-                }else if(value instanceof BasicDate){
+                }else if(value instanceof BasicDateVector){
                     temporals = new ArrayList<>(size);
                     for(int i=0; i<size; ++i){
                         temporals.add((((BasicDateVector) value).get(i)).getTemporal());
                     }
-                }else if(value instanceof BasicTime){
+                }else if(value instanceof BasicTimeVector){
                     temporals = new ArrayList<>(size);
                     for(int i=0; i<size; ++i){
                         temporals.add((((BasicTimeVector) value).get(i)).getTemporal());
                     }
-                }else if(value instanceof BasicMinute){
+                }else if(value instanceof BasicMinuteVector){
                     temporals = new ArrayList<>(size);
                     for(int i=0; i<size; ++i){
                         temporals.add((((BasicMinuteVector) value).get(i)).getTemporal());
                     }
-                }else if(value instanceof BasicSecond){
+                }else if(value instanceof BasicSecondVector){
                     temporals = new ArrayList<>(size);
                     for(int i=0; i<size; ++i){
                         temporals.add((((BasicSecondVector) value).get(i)).getTemporal());
                     }
-                }else if(value instanceof BasicNanoTime){
+                }else if(value instanceof BasicNanoTimeVector){
                     temporals = new ArrayList<>(size);
                     for(int i=0; i<size; ++i){
                         temporals.add((((BasicNanoTimeVector) value).get(i)).getTemporal());
                     }
-                }else if(value instanceof BasicDateTime){
+                }else if(value instanceof BasicDateTimeVector){
                     temporals = new ArrayList<>(size);
                     for(int i=0; i<size; ++i){
                         temporals.add((((BasicDateTimeVector) value).get(i)).getTemporal());
                     }
-                }else if(value instanceof BasicNanoTimestamp){
+                }else if(value instanceof BasicNanoTimestampVector){
                     temporals = new ArrayList<>(size);
                     for(int i=0; i<size; ++i){
                         temporals.add((((BasicNanoTimestampVector) value).get(i)).getTemporal());
                     }
                 }
 
-                if(temporal == null){
+                if(temporals == null){
                     return false;
                 }else{
-                    insertRowMap.put(columnIndex, DataTimeCast(temporal, vector));
+                    insertRowMap.put(columnIndex, DataTimeVectorCast(temporals, srcClassName, entity));
                     return true;
                 }
 
@@ -1663,7 +1680,7 @@ public class JDBCResultSet implements ResultSet{
                 if(temporals == null){
                     return false;
                 }else{
-                    insertRowMap.put(columnIndex, DataTimeVectorCast(temporals, vector));
+                    insertRowMap.put(columnIndex, DataTimeVectorCast(temporals, srcClassName, entity));
                     return true;
                 }
 
@@ -1710,27 +1727,17 @@ public class JDBCResultSet implements ResultSet{
                 if(temporals == null){
                     return false;
                 }else{
-                    insertRowMap.put(columnIndex, DataTimeVectorCast(temporals, vector));
+                    insertRowMap.put(columnIndex, DataTimeVectorCast(temporals, srcClassName, entity));
                     return true;
                 }
-            }else if(value instanceof Date){
-                temporal = new BasicDate(((Date) value).toLocalDate()).getTemporal();
-            }else if(value instanceof Time){
-                temporal = new BasicNanoTime(((Time) value).toLocalTime()).getTemporal();
-            }else if(value instanceof Timestamp){
-                temporal = new BasicNanoTimestamp(((Timestamp) value).toLocalDateTime()).getTemporal();
-            }else if(value instanceof LocalDate){
-                temporal = new BasicDate(((LocalDate) value)).getTemporal();
-            }else if(value instanceof LocalTime){
-                temporal = new BasicNanoTime((LocalTime) value).getTemporal();
-            }else if(value instanceof LocalDateTime){
-                temporal = new BasicNanoTimestamp((LocalDateTime) value).getTemporal();
+            }else {
+                temporal = TypeCast.getTemporal(value);
             }
 
             if(temporal==null){
                 return false;
             }else {
-                insertRowMap.put(columnIndex, DataTimeCast(temporal, vector));
+                insertRowMap.put(columnIndex, TypeCast.DataTimeCast(temporal, srcClassName, entity));
                 return true;
             }
         }catch (Exception e){
@@ -1831,103 +1838,109 @@ public class JDBCResultSet implements ResultSet{
 
     }
 
-    private Entity DataTimeCast(Temporal temporal, Entity entity) throws SQLException{
-        if(entity instanceof  BasicMonthVector){
+
+    private Entity DataTimeCast(Temporal temporal, Entity srcEntity, Entity targetEntity) throws SQLException{
+        if(srcEntity.getClass().getName().equals(targetEntity.getClass().getName()))
+            return srcEntity;
+
+        if(targetEntity instanceof  BasicMonthVector){
             return new BasicMonth(YearMonth.from(temporal));
-        }else if(entity instanceof BasicDateVector){
+        }else if(targetEntity instanceof BasicDateVector){
             return new BasicDate(LocalDate.from(temporal));
-        }else if(entity instanceof BasicTimeVector){
+        }else if(targetEntity instanceof BasicTimeVector){
             return new BasicTime(LocalTime.from(temporal));
-        }else if(entity instanceof BasicMinuteVector){
+        }else if(targetEntity instanceof BasicMinuteVector){
             return new BasicMinute(LocalTime.from(temporal));
-        }else if(entity instanceof BasicSecondVector){
+        }else if(targetEntity instanceof BasicSecondVector){
             return new BasicSecond(LocalTime.from(temporal));
-        }else if(entity instanceof BasicNanoTimeVector){
+        }else if(targetEntity instanceof BasicNanoTimeVector){
             return new BasicNanoTime(LocalTime.from(temporal));
-        }else if(entity instanceof BasicTimestampVector){
+        }else if(targetEntity instanceof BasicTimestampVector){
             return new BasicTimestamp(LocalDateTime.from(temporal));
-        }else if(entity instanceof BasicDateTimeVector){
+        }else if(targetEntity instanceof BasicDateTimeVector){
             return new BasicDateTime(LocalDateTime.from(temporal));
-        }else if(entity instanceof BasicNanoTimestampVector){
+        }else if(targetEntity instanceof BasicNanoTimestampVector){
             return new BasicNanoTimestamp(LocalDateTime.from(temporal));
         }else{
             throw new SQLException("can not cast DataTime");
         }
     }
 
-    private Entity DataTimeVectorCast(List<Temporal> temporals, Entity entity) throws SQLException{
+    private Entity DataTimeVectorCast(List<Temporal> temporals, String srcClassName, Entity tagetEntity) throws SQLException{
         try {
-            Vector vector;
+            Vector vector = null;
             int size = temporals.size();
-            if(entity instanceof  BasicMonthVector){
+            if(tagetEntity instanceof  BasicMonthVector){
                 vector = new BasicMonthVector(size);
                 int index = 0;
                 for(Temporal temporal : temporals){
                     vector.set(index,new BasicMonth(YearMonth.from(temporal)));
                     ++index;
                 }
-            }else if(entity instanceof BasicDateVector){
+            }else if(tagetEntity instanceof BasicDateVector){
                 vector = new BasicDateVector(size);
                 int index = 0;
                 for(Temporal temporal : temporals){
                     vector.set(index,new BasicDate(LocalDate.from(temporal)));
                     ++index;
                 }
-            }else if(entity instanceof BasicTimeVector){
+            }else if(tagetEntity instanceof BasicTimeVector){
                 vector = new BasicTimeVector(size);
                 int index = 0;
                 for(Temporal temporal : temporals){
                     vector.set(index,new BasicTime(LocalTime.from(temporal)));
                     ++index;
                 }
-            }else if(entity instanceof BasicMinuteVector){
+            }else if(tagetEntity instanceof BasicMinuteVector){
                 vector = new BasicTimeVector(size);
                 int index = 0;
                 for(Temporal temporal : temporals){
                     vector.set(index,new BasicMinute(LocalTime.from(temporal)));
                     ++index;
                 }
-            }else if(entity instanceof BasicSecondVector){
+            }else if(tagetEntity instanceof BasicSecondVector){
                 vector = new BasicSecondVector(size);
                 int index = 0;
                 for(Temporal temporal : temporals){
                     vector.set(index,new BasicSecond(LocalTime.from(temporal)));
                     ++index;
                 }
-            }else if(entity instanceof BasicNanoTimeVector){
+            }else if(tagetEntity instanceof BasicNanoTimeVector){
                 vector = new BasicNanoTimeVector(size);
                 int index = 0;
                 for(Temporal temporal : temporals){
                     vector.set(index,new BasicNanoTime(LocalTime.from(temporal)));
                     ++index;
                 }
-            }else if(entity instanceof BasicTimestampVector){
+            }else if(tagetEntity instanceof BasicTimestampVector){
                 vector = new BasicNanoTimeVector(size);
                 int index = 0;
                 for(Temporal temporal : temporals){
                     vector.set(index,new BasicTimestamp(LocalDateTime.from(temporal)));
                     ++index;
                 }
-            }else if(entity instanceof BasicDateTimeVector){
+            }else if(tagetEntity instanceof BasicDateTimeVector){
                 vector = new BasicDateTimeVector(size);
                 int index = 0;
                 for(Temporal temporal : temporals){
                     vector.set(index,new BasicDateTime(LocalDateTime.from(temporal)));
                     ++index;
                 }
-            }else if(entity instanceof BasicNanoTimestampVector){
+            }else if(tagetEntity instanceof BasicNanoTimestampVector){
                 vector = new BasicNanoTimestampVector(size);
                 int index = 0;
                 for(Temporal temporal : temporals){
                     vector.set(index,new BasicNanoTimestamp(LocalDateTime.from(temporal)));
                     ++index;
                 }
-            }else{
-                throw new SQLException("can not cast DataTime");
             }
-            return vector;
+            if(vector == null){
+                throw new SQLException(srcClassName.getClass().getName() + " can not cast DataTime");
+            }else{
+                return vector;
+            }
         }catch (Exception e){
-            throw new SQLException("can not cast DataTime");
+            throw new SQLException(srcClassName.getClass().getName() + " can not cast DataTime");
         }
     }
 
