@@ -1,5 +1,9 @@
 package com.dolphindb.jdbc;
 
+import com.xxdb.data.BasicDate;
+import com.xxdb.data.BasicNanoTimestamp;
+import com.xxdb.data.Utils;
+
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -64,13 +68,41 @@ public class Test {
 
         System.out.println(strings.getClass().getName());
 
-        long l = 1000000;
+//        long l = 1000000;
+//
+//        Date date = new Date(l);
+//        Time time = new Time(l);
+//        Timestamp timestamp = new Timestamp(l);
+//        System.out.println(date.toLocalDate());
+//        System.out.println(time.toLocalTime());
+//        System.out.println(timestamp.toLocalDateTime());
 
-        Date date = new Date(l);
-        Time time = new Time(l);
-        Timestamp timestamp = new Timestamp(l);
-        System.out.println(date.toLocalDate());
-        System.out.println(time.toLocalTime());
-        System.out.println(timestamp.toLocalDateTime());
+        BasicDate basicDate = new BasicDate(LocalDate.parse("2013-06-14"));
+        BasicNanoTimestamp basicNanoTimestamp = new BasicNanoTimestamp(Utils.parseNanoTimestamp(TypeCast.L+basicDate.getInt()));
+        LocalDate localDate = basicDate.getDate();
+        //LocalDateTime localDateTime = LocalDateTime.of(localDate.getYear(),localDate.getMonthValue(),localDate.getDayOfMonth(),0,0,0);
+        System.out.println(basicDate.getInt());
+        LocalDateTime localDateTime = LocalDateTime.of(1988,1,1,0,0,0,1);
+        System.out.println(localDateTime.getYear());
+        long l = Utils.countMilliseconds(LocalDateTime.of(1970,1,1,1,0,0,1));
+        System.out.println(l);
+        System.out.println(basicNanoTimestamp.getString());
+
+//        LocalDateTime dateTime = LocalDateTime.now();
+//        String[] strings1 = new String[]{TypeCast.YEAR_MONTH,TypeCast.LOCAL_TIME,TypeCast.LOCAL_DATE,TypeCast.LOCAL_DATETIME};
+//        Temporal[] temporals = new Temporal[strings1.length];
+//        int index =0;
+//        for(String s:strings1){
+//            temporals[index] = TypeCast.castTemporal(dateTime,s);
+//            System.out.println(temporals[index]);
+//            ++index;
+//        }
+//        for(int i=0,ilen =strings1.length;i<ilen; ++i){
+//            System.out.println(strings1[i]);
+//            for (int j=0,jlen =strings1.length;j<jlen; ++j){
+//                System.out.println(strings1[j]);
+//                System.out.println(TypeCast.castTemporal(temporals[i],strings1[j]));
+//            }
+//        }
     }
 }

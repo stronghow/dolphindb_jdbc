@@ -32,7 +32,7 @@ public class Main {
 
     public static void main(String[] args) throws Exception{
 
-       //CreateTable(System.getProperty("user.dir")+"/data/createTable_all.java",path_All,"t2");
+       CreateTable(System.getProperty("user.dir")+"/data/createTable_all.java",path_All,"t1");
 
 
 
@@ -133,7 +133,7 @@ public class Main {
 //
 //
 //        TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,false);
-//        TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,true);
+        TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,true);
 //
 //        TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select bool,char from ej(t1, t1, `bool)",new Object[]{true,'a'},true);
 //
@@ -164,7 +164,7 @@ public class Main {
 
 //        TestDatabaseMetaData(DB_URL1,"");
 
-        TestPreparedStatementInsert();
+        //TestPreparedStatementInsert();
 
 
     }
