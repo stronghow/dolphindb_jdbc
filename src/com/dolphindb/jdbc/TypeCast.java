@@ -1,7 +1,6 @@
 package com.dolphindb.jdbc;
 
 import com.xxdb.data.*;
-import com.xxdb.data.Utils;
 
 import java.sql.Date;
 import java.sql.SQLException;
@@ -61,7 +60,6 @@ public class TypeCast {
     public static final LocalTime LOCALTIME = LocalTime.of(HOUR,MINUTE,SECOND,NANO);
     public static final LocalDate LOCALDATE = LocalDate.of(YEAR,MONTH,DAY);
     public static final LocalDateTime LOCALDATETIME = LocalDateTime.of(LOCALDATE,LOCALTIME);
-    public static final long L = Utils.countMilliseconds(LOCALDATETIME);
 
 
     //basicType
@@ -97,7 +95,7 @@ public class TypeCast {
         String srcValueClassName = srcValue.getClass().getName();
         String targetEntityClassName = targetEntity.getClass().getName();
         Entity castEntity = null;
-        if(srcValueClassName.equals(targetEntityClassName)){
+        if(srcValueClassName.equals(targetEntityClassName) || srcValueClassName.startsWith(targetEntityClassName)){
             return (Entity) srcValue;
         }
         castEntity = dateTimeCast(srcValue,targetEntity);
@@ -120,7 +118,7 @@ public class TypeCast {
             if (castEntity != null) return castEntity;
         }
         if(srcValue instanceof Object[]){
-            castEntity = basicTypeArr2Vector(srcValue,targetEntity);
+            castEntity = dateTimeArr2Vector(srcValue,targetEntity);
             if (castEntity != null) return castEntity;
         }
         return null;
@@ -177,28 +175,8 @@ public class TypeCast {
             default:
                 return null;
         }
-        switch (targetEntityClassName){
-            case BASIC_MONTH:
-                return new BasicMonth((YearMonth) castTemporal(temporal,YEAR_MONTH));
-            case BASIC_DATE:
-                return new BasicDate((LocalDate) castTemporal(temporal,LOCAL_DATE));
-            case BASIC_TIME:
-                return new BasicTime((LocalTime) castTemporal(temporal,LOCAL_TIME));
-            case BASIC_MINUTE:
-                return new BasicMinute((LocalTime) castTemporal(temporal,LOCAL_TIME));
-            case BASIC_SECOND:
-                return new BasicSecond((LocalTime) castTemporal(temporal,LOCAL_TIME));
-            case BASIC_NANOTIME:
-                return new BasicNanoTime((LocalTime) castTemporal(temporal,LOCAL_TIME));
-            case BASIC_TIMESTAMP:
-                return new BasicTimestamp((LocalDateTime) castTemporal(temporal,LOCAL_DATETIME));
-            case BASIC_DATETIME:
-                return new BasicDateTime((LocalDateTime) castTemporal(temporal,LOCAL_DATETIME));
-            case BASIC_NANOTIMESTAMP:
-                return new BasicNanoTimestamp((LocalDateTime) castTemporal(temporal,LOCAL_DATETIME));
-            default:
-                throw new SQLException(srcEntityClassName + " can not cast " + targetEntityClassName);
-        }
+
+        return Temporal2dateTime(temporal,srcEntityClassName,targetEntityClassName);
     }
 
     public static boolean CheckedDateTime(String srcEntityClassName, String targetEntityClassName) throws SQLException{
@@ -247,53 +225,118 @@ public class TypeCast {
         }
     }
 
-    public static Entity Temporal2dateTime(Temporal srcTemporal, String srcEntityClassName, String targetEntityClassName) throws SQLException{
-            switch (targetEntityClassName) {
-                case BASIC_MONTH:
-                    return new BasicMonth((YearMonth) castTemporal(srcTemporal,YEAR_MONTH));
-                case BASIC_DATE:
-                    return new BasicDate((LocalDate) castTemporal(srcTemporal,LOCAL_DATE));
-                case BASIC_TIME:
-                    return new BasicTime((LocalTime) castTemporal(srcTemporal,LOCAL_TIME));
-                case BASIC_MINUTE:
-                    return new BasicMinute((LocalTime) castTemporal(srcTemporal,LOCAL_TIME));
-                case BASIC_SECOND:
-                    return new BasicSecond((LocalTime) castTemporal(srcTemporal,LOCAL_TIME));
-                case BASIC_NANOTIME:
-                    return new BasicNanoTime((LocalTime) castTemporal(srcTemporal,LOCAL_TIME));
-                case BASIC_TIMESTAMP:
-                    return new BasicTimestamp((LocalDateTime) castTemporal(srcTemporal,LOCAL_DATETIME));
-                case BASIC_DATETIME:
-                    return new BasicDateTime((LocalDateTime) castTemporal(srcTemporal,LOCAL_DATETIME));
-                case BASIC_NANOTIMESTAMP:
-                    return new BasicNanoTimestamp((LocalDateTime) castTemporal(srcTemporal,LOCAL_DATETIME));
-                default:
-                    throw new SQLException(srcEntityClassName + " can not cast " + targetEntityClassName);
+    public static Entity Tempos2dateTime(Object srcTempos, String srcEntityClassName, String targetEntityClassName) throws SQLException{
+        Object[] objects = (Object[]) srcTempos;
+        int size = objects.length;
+        switch (targetEntityClassName) {
+            case BASIC_MONTH: {
+                BasicMonthVector targetVector = new BasicMonthVector(size);
+                int index = 0;
+                for (Object srcTemporal : objects) {
+                    targetVector.setMonth(index, (YearMonth) castTemporal(srcTemporal, YEAR_MONTH));
+                    ++index;
+                }
+                return targetVector;
             }
+            case BASIC_DATE:{
+                BasicDateVector targetVector = new BasicDateVector(size);
+                int index = 0;
+                for (Object srcTemporal : objects) {
+                    targetVector.setDate(index, (LocalDate) castTemporal(srcTemporal, LOCAL_DATE));
+                    ++index;
+                }
+                return targetVector;
+            }
+            case BASIC_TIME:{
+                BasicTimeVector targetVector = new BasicTimeVector(size);
+                int index = 0;
+                for (Object srcTemporal : objects) {
+                    targetVector.setTime(index, (LocalTime) castTemporal(srcTemporal,LOCAL_TIME));
+                    ++index;
+                }
+                return targetVector;
+            }
+            case BASIC_MINUTE:{
+                BasicMinuteVector targetVector = new BasicMinuteVector(size);
+                int index = 0;
+                for (Object srcTemporal : objects) {
+                    targetVector.setMinute(index, (LocalTime) castTemporal(srcTemporal,LOCAL_TIME));
+                    ++index;
+                }
+                return targetVector;
+            }
+            case BASIC_SECOND:{
+                BasicSecondVector targetVector = new BasicSecondVector(size);
+                int index = 0;
+                for (Object srcTemporal : objects) {
+                    targetVector.setSecond(index, (LocalTime) castTemporal(srcTemporal,LOCAL_TIME));
+                    ++index;
+                }
+                return targetVector;
+            }
+            case BASIC_NANOTIME:{
+                BasicNanoTimeVector targetVector = new BasicNanoTimeVector(size);
+                int index = 0;
+                for (Object srcTemporal : objects) {
+                    targetVector.setNanoTime(index, (LocalTime) castTemporal(srcTemporal,LOCAL_TIME));
+                    ++index;
+                }
+                return targetVector;
+            }
+            case BASIC_TIMESTAMP: {
+                BasicTimestampVector targetVector = new BasicTimestampVector(size);
+                int index = 0;
+                for (Object srcTemporal : objects) {
+                    targetVector.setTimestamp(index, (LocalDateTime) castTemporal(srcTemporal,LOCAL_DATETIME));
+                    ++index;
+                }
+                return targetVector;
+            }
+            case BASIC_DATETIME:{
+                BasicDateTimeVector targetVector = new BasicDateTimeVector(size);
+                int index = 0;
+                for (Object srcTemporal : objects) {
+                    targetVector.setDateTime(index, (LocalDateTime) castTemporal(srcTemporal,LOCAL_DATETIME));
+                    ++index;
+                }
+                return targetVector;
+            }
+            case BASIC_NANOTIMESTAMP:{
+                BasicNanoTimestampVector targetVector = new BasicNanoTimestampVector(size);
+                int index = 0;
+                for (Object srcTemporal : objects) {
+                    targetVector.setNanoTimestamp(index, (LocalDateTime) castTemporal(srcTemporal,LOCAL_DATETIME));
+                    ++index;
+                }
+                return targetVector;
+            }
+            default:
+                throw new SQLException(srcEntityClassName + " can not cast " + targetEntityClassName);
+        }
     }
 
-    public static Entity Arr2dateTime(Object values,String srcEntityClassName,String targetEntityClassName) throws SQLException{
-        switch (targetEntityClassName){
+    public static Entity Temporal2dateTime(Temporal srcTemporal, String srcEntityClassName, String targetEntityClassName) throws SQLException{
+        switch (targetEntityClassName) {
             case BASIC_MONTH:
-                return new BasicMonthVector((int[])values);
+                return new BasicMonth((YearMonth) castTemporal(srcTemporal,YEAR_MONTH));
             case BASIC_DATE:
-                return new BasicDateVector((int[])values);
+                return new BasicDate((LocalDate) castTemporal(srcTemporal,LOCAL_DATE));
             case BASIC_TIME:
-                return new BasicTimeVector((int[])values);
+                return new BasicTime((LocalTime) castTemporal(srcTemporal,LOCAL_TIME));
             case BASIC_MINUTE:
-                return new BasicMinuteVector((int[])values);
+                return new BasicMinute((LocalTime) castTemporal(srcTemporal,LOCAL_TIME));
             case BASIC_SECOND:
-                return new BasicSecondVector((int[])values);
+                return new BasicSecond((LocalTime) castTemporal(srcTemporal,LOCAL_TIME));
             case BASIC_NANOTIME:
-                return new BasicNanoTimeVector((long[])values);
+                return new BasicNanoTime((LocalTime) castTemporal(srcTemporal,LOCAL_TIME));
             case BASIC_TIMESTAMP:
-                return new BasicTimestampVector((long[])values);
+                return new BasicTimestamp((LocalDateTime) castTemporal(srcTemporal,LOCAL_DATETIME));
             case BASIC_DATETIME:
-                return new BasicDateTimeVector((int[])values);
+                return new BasicDateTime((LocalDateTime) castTemporal(srcTemporal,LOCAL_DATETIME));
             case BASIC_NANOTIMESTAMP:
-                return new BasicNanoTimestampVector((long[])values);
+                return new BasicNanoTimestamp((LocalDateTime) castTemporal(srcTemporal,LOCAL_DATETIME));
             default:
-                throw new SQLException(srcEntityClassName + " can not cast "+ targetEntityClassName);
+                throw new SQLException(srcEntityClassName + " can not cast " + targetEntityClassName);
         }
     }
 
@@ -302,96 +345,107 @@ public class TypeCast {
         String srcEntityClassName = srcEntity.getClass().getName();
         if(!CheckedDateTime(srcEntityClassName,targetEntityClassName))
             return null;
+        Temporal srcTemporal = null;
+        Temporal[] srcTempos = null;
         switch (srcEntityClassName){
             case BASIC_MONTH:
-                return Temporal2dateTime(((BasicMonth)srcEntity).getTemporal(),srcEntityClassName,targetEntityClassName);
+                srcTemporal = ((BasicMonth)srcEntity).getTemporal();
+                return Temporal2dateTime(srcTemporal,srcEntityClassName,targetEntityClassName);
             case BASIC_DATE:
-                return Temporal2dateTime(((BasicDate)srcEntity).getTemporal(),srcEntityClassName,targetEntityClassName);
+                srcTemporal = ((BasicDate)srcEntity).getTemporal();
+                return Temporal2dateTime(srcTemporal,srcEntityClassName,targetEntityClassName);
             case BASIC_TIME:
-                return Temporal2dateTime(((BasicTime)srcEntity).getTemporal(),srcEntityClassName,targetEntityClassName);
+                srcTemporal = ((BasicTime)srcEntity).getTemporal();
+                return Temporal2dateTime(srcTemporal,srcEntityClassName,targetEntityClassName);
             case BASIC_MINUTE:
-                return Temporal2dateTime(((BasicMinute)srcEntity).getTemporal(),srcEntityClassName,targetEntityClassName);
+                srcTemporal = ((BasicMinute)srcEntity).getTemporal();
+                return Temporal2dateTime(srcTemporal,srcEntityClassName,targetEntityClassName);
             case BASIC_SECOND:
-                return Temporal2dateTime(((BasicSecond)srcEntity).getTemporal(),srcEntityClassName,targetEntityClassName);
+                srcTemporal = ((BasicSecond)srcEntity).getTemporal();
+                return Temporal2dateTime(srcTemporal,srcEntityClassName,targetEntityClassName);
             case BASIC_NANOTIME:
-                return Temporal2dateTime(((BasicNanoTime)srcEntity).getTemporal(),srcEntityClassName,targetEntityClassName);
+                srcTemporal = ((BasicNanoTime)srcEntity).getTemporal();
+                return Temporal2dateTime(srcTemporal,srcEntityClassName,targetEntityClassName);
             case BASIC_TIMESTAMP:
-                return Temporal2dateTime(((BasicTimestamp)srcEntity).getTemporal(),srcEntityClassName,targetEntityClassName);
+                srcTemporal = ((BasicTimestamp)srcEntity).getTemporal();
+                return Temporal2dateTime(srcTemporal,srcEntityClassName,targetEntityClassName);
             case BASIC_DATETIME:
-                return Temporal2dateTime(((BasicDateTime)srcEntity).getTemporal(),srcEntityClassName,targetEntityClassName);
+                srcTemporal = ((BasicDateTime)srcEntity).getTemporal();
+                return Temporal2dateTime(srcTemporal,srcEntityClassName,targetEntityClassName);
             case BASIC_NANOTIMESTAMP:
-                return Temporal2dateTime(((BasicNanoTimestamp)srcEntity).getTemporal(),srcEntityClassName,targetEntityClassName);
+                srcTemporal = ((BasicNanoTimestamp)srcEntity).getTemporal();
+                return Temporal2dateTime(srcTemporal,srcEntityClassName,targetEntityClassName);
             case BASIC_MONTH_VECTOR: {
                 int size = srcEntity.rows();
-                int[] values = new int[size];
+                srcTempos = new Temporal[size];
                 for (int i = 0; i < size; ++i) {
-                    values[i] = ((BasicMonthVector) srcEntity).getInt(i);
+                    srcTempos[i] = ((BasicMonthVector) srcEntity).getMonth(i);
                 }
-                return Arr2dateTime(values, srcEntityClassName, targetEntityClassName);
+                return Tempos2dateTime(srcTempos, srcEntityClassName, targetEntityClassName);
             }
             case BASIC_DATE_VECTOR: {
                 int size = srcEntity.rows();
-                int[] values = new int[size];
+                srcTempos = new Temporal[size];
                 for (int i = 0; i < size; ++i) {
-                    values[i] = ((BasicDateVector) srcEntity).getInt(i);
+                    srcTempos[i] = ((BasicDateVector) srcEntity).getDate(i);
                 }
-                return Arr2dateTime(values, srcEntityClassName, targetEntityClassName);
+                return Tempos2dateTime(srcTempos, srcEntityClassName, targetEntityClassName);
             }
             case BASIC_TIME_VECTOR: {
                 int size = srcEntity.rows();
-                int[] values = new int[size];
+                srcTempos = new Temporal[size];
                 for (int i = 0; i < size; ++i) {
-                    values[i] = ((BasicTimeVector) srcEntity).getInt(i);
+                    srcTempos[i] = ((BasicTimeVector) srcEntity).getTime(i);
                 }
-                return Arr2dateTime(values, srcEntityClassName, targetEntityClassName);
+                return Tempos2dateTime(srcTempos, srcEntityClassName, targetEntityClassName);
             }
             case BASIC_MINUTE_VECTOR:{
                 int size = srcEntity.rows();
-                int[] values = new int[size];
+                srcTempos = new Temporal[size];
                 for (int i = 0; i < size; ++i) {
-                    values[i] = ((BasicMinuteVector) srcEntity).getInt(i);
+                    srcTempos[i] = ((BasicMinuteVector) srcEntity).getMinute(i);
                 }
-                return Arr2dateTime(values, srcEntityClassName, targetEntityClassName);
+                return Tempos2dateTime(srcTempos, srcEntityClassName, targetEntityClassName);
             }
             case BASIC_SECOND_VECTOR:{
                 int size = srcEntity.rows();
-                int[] values = new int[size];
+                srcTempos = new Temporal[size];
                 for (int i = 0; i < size; ++i) {
-                    values[i] = ((BasicSecondVector) srcEntity).getInt(i);
+                    srcTempos[i] = ((BasicSecondVector) srcEntity).getSecond(i);
                 }
-                return Arr2dateTime(values, srcEntityClassName, targetEntityClassName);
+                return Tempos2dateTime(srcTempos, srcEntityClassName, targetEntityClassName);
             }
             case BASIC_NANOTIME_VECTOR:{
                 int size = srcEntity.rows();
-                long[] values = new long[size];
+                srcTempos = new Temporal[size];
                 for (int i = 0; i < size; ++i) {
-                    values[i] = ((BasicNanoTimeVector) srcEntity).getLong(i);
+                    srcTempos[i] = ((BasicNanoTimeVector) srcEntity).getNanoTime(i);
                 }
-                return Arr2dateTime(values, srcEntityClassName, targetEntityClassName);
+                return Tempos2dateTime(srcTempos, srcEntityClassName, targetEntityClassName);
             }
             case BASIC_TIMESTAMP_VECTOR:{
                 int size = srcEntity.rows();
-                long[] values = new long[size];
+                srcTempos = new Temporal[size];
                 for (int i = 0; i < size; ++i) {
-                    values[i] = ((BasicTimestampVector) srcEntity).getLong(i);
+                    srcTempos[i] = ((BasicTimestampVector) srcEntity).getTimestamp(i);
                 }
-                return Arr2dateTime(values, srcEntityClassName, targetEntityClassName);
+                return Tempos2dateTime(srcTempos, srcEntityClassName, targetEntityClassName);
             }
             case BASIC_DATETIME_VECTOR:{
                 int size = srcEntity.rows();
-                int[] values = new int[size];
+                srcTempos = new Temporal[size];
                 for (int i = 0; i < size; ++i) {
-                    values[i] = ((BasicDateTimeVector) srcEntity).getInt(i);
+                    srcTempos[i] = ((BasicDateTimeVector) srcEntity).getDateTime(i);
                 }
-                return Arr2dateTime(values, srcEntityClassName, targetEntityClassName);
+                return Tempos2dateTime(srcTempos, srcEntityClassName, targetEntityClassName);
             }
             case BASIC_NANOTIMESTAMP_VECTOR:{
                 int size = srcEntity.rows();
-                long[] values = new long[size];
+                srcTempos = new Temporal[size];
                 for (int i = 0; i < size; ++i) {
-                    values[i] = ((BasicNanoTimestampVector) srcEntity).getLong(i);
+                    srcTempos[i] = ((BasicNanoTimestampVector) srcEntity).getNanoTimestamp(i);
                 }
-                return Arr2dateTime(values, srcEntityClassName, targetEntityClassName);
+                return Tempos2dateTime(srcTempos, srcEntityClassName, targetEntityClassName);
             }
             default:
                 return null;
@@ -412,161 +466,52 @@ public class TypeCast {
             throw new SQLException("you need use com.xxdb.data.Vector load com.xxdb.data.Scalar");
         }
         if(!CheckedDateTime(srcValueFromListClassName,targetEntityClassName)) return null;
-        switch (srcValueFromListClassName){
-            case DATE:
-                switch (targetEntityClassName){
-                    case BASIC_MONTH:
-                    case BASIC_DATE:
-                    case BASIC_TIME:
-                    case BASIC_MINUTE:
-                    case BASIC_SECOND:
-                    case BASIC_NANOTIME:
-                    case BASIC_TIMESTAMP:
-                    case BASIC_DATETIME:
-                    case BASIC_NANOTIMESTAMP:
-                        Vector targetVector = new BasicDateVector(size);
-                        int index = 0;
-                        for(Date item : (Date[]) srcValue){
-                            ((BasicDateVector) targetVector).setDate(index,item.toLocalDate());
-                            ++index;
-                        }
-                        return targetVector;
-                    default:
-                        throw new SQLException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
-                }
-            case TIME:
-                switch (targetEntityClassName){
-                    case BASIC_MONTH:
-                    case BASIC_DATE:
-                    case BASIC_TIME:
-                    case BASIC_MINUTE:
-                    case BASIC_SECOND:
-                    case BASIC_NANOTIME:
-                    case BASIC_TIMESTAMP:
-                    case BASIC_DATETIME:
-                    case BASIC_NANOTIMESTAMP:
-                        Vector targetVector = new BasicSecondVector(size);
-                        int index = 0;
-                        for(Time item : (Time[]) srcValue){
-                            ((BasicSecondVector) targetVector).setSecond(index,item.toLocalTime());
-                            ++index;
-                        }
-                        return targetVector;
-                    default:
-                        throw new SQLException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
-                }
-            case TIMESTAMP:
-                switch (targetEntityClassName){
-                    case BASIC_MONTH:
-                    case BASIC_DATE:
-                    case BASIC_TIME:
-                    case BASIC_MINUTE:
-                    case BASIC_SECOND:
-                    case BASIC_NANOTIME:
-                    case BASIC_TIMESTAMP:
-                    case BASIC_DATETIME:
-                    case BASIC_NANOTIMESTAMP:
-                        Vector targetVector = new BasicTimestampVector(size);
-                        int index = 0;
-                        for(Timestamp item : (Timestamp[]) srcValue){
-                            ((BasicTimestampVector) targetVector).setTimestamp(index,item.toLocalDateTime());
-                            ++index;
-                        }
-                        return targetVector;
-                    default:
-                        throw new SQLException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
-                }
-            case YEAR_MONTH:
-                switch (targetEntityClassName){
-                    case BASIC_MONTH:
-                    case BASIC_DATE:
-                    case BASIC_TIME:
-                    case BASIC_MINUTE:
-                    case BASIC_SECOND:
-                    case BASIC_NANOTIME:
-                    case BASIC_TIMESTAMP:
-                    case BASIC_DATETIME:
-                    case BASIC_NANOTIMESTAMP:
-                        Vector targetVector = new BasicMonthVector(size);
-                        int index = 0;
-                        for(YearMonth item : (YearMonth[]) srcValue){
-                            ((BasicMonthVector) targetVector).setMonth(index,item);
-                            ++index;
-                        }
-                        return targetVector;
-                    default:
-                        throw new SQLException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
-                }
-            case LOCAL_DATE:
-                switch (targetEntityClassName){
-                    case BASIC_MONTH:
-                    case BASIC_DATE:
-                    case BASIC_TIME:
-                    case BASIC_MINUTE:
-                    case BASIC_SECOND:
-                    case BASIC_NANOTIME:
-                    case BASIC_TIMESTAMP:
-                    case BASIC_DATETIME:
-                    case BASIC_NANOTIMESTAMP:
-                        Vector targetVector = new BasicDateVector(size);
-                        int index = 0;
-                        for(LocalDate item : (LocalDate[]) srcValue){
-                            ((BasicDateVector) targetVector).setDate(index,item);
-                            ++index;
-                        }
-                        return targetVector;
-                    default:
-                        throw new SQLException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
-                }
-            case LOCAL_TIME:
-                switch (targetEntityClassName){
-                    case BASIC_MONTH:
-                    case BASIC_DATE:
-                    case BASIC_TIME:
-                    case BASIC_MINUTE:
-                    case BASIC_SECOND:
-                    case BASIC_NANOTIME:
-                    case BASIC_TIMESTAMP:
-                    case BASIC_DATETIME:
-                    case BASIC_NANOTIMESTAMP:
-                        Vector targetVector = new BasicSecondVector(size);
-                        int index = 0;
-                        for(LocalTime item : (LocalTime[]) srcValue){
-                            ((BasicSecondVector) targetVector).setSecond(index,item);
-                            ++index;
-                        }
-                        return targetVector;
-                    default:
-                        throw new SQLException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
-                }
-            case LOCAL_DATETIME:
-                switch (targetEntityClassName){
-                    case BASIC_MONTH:
-                    case BASIC_DATE:
-                    case BASIC_TIME:
-                    case BASIC_MINUTE:
-                    case BASIC_SECOND:
-                    case BASIC_NANOTIME:
-                    case BASIC_TIMESTAMP:
-                    case BASIC_DATETIME:
-                    case BASIC_NANOTIMESTAMP:
-                        Vector targetVector = new BasicTimestampVector(size);
-                        int index = 0;
-                        for(LocalDateTime item : (LocalDateTime[]) srcValue){
-                            ((BasicTimestampVector) targetVector).setTimestamp(index,item);
-                            ++index;
-                        }
-                        return targetVector;
-                    default:
-                        throw new SQLException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
-                }
-            default:
-                return null;
-        }
+        return Tempos2dateTime(srcArr,srcValueFromListClassName,targetEntityClassName);
     }
 
-    public static Entity DataTimeCast(Temporal temporal, String srcValue, Entity targetEntity){
-        return null;
+    public static boolean CheckedBasicType(String srcEntityClassName, String targetEntityClassName) throws SQLException{
+        switch (srcEntityClassName){
+            case BASIC_BOOLEAN:
+            case BASIC_BYTE:
+            case BASIC_INT:
+            case BASIC_SHORT:
+            case BASIC_LONG:
+            case BASIC_FLOAT:
+            case BASIC_DOUBLE:
+            case BASIC_STRING:
+            case BASIC_BOOLEAN_VECTOR:
+            case BASIC_BYTE_VECTOR:
+            case BASIC_INT_VECTOR:
+            case BASIC_SHORT_VECTOR:
+            case BASIC_LONG_VECTOR:
+            case BASIC_FLOAT_VECTOR:
+            case BASIC_DOUBLE_VECTOR:
+            case BASIC_STRING_VECTOR:
+            case BOOLEAN:
+            case BYTE:
+            case CHAR:
+            case SHORT:
+            case INT:
+            case LONG:
+            case FLOAT:
+            case DOUBLE:
+            case STRING:
+                switch (targetEntityClassName){
+                    case BASIC_BOOLEAN:
+                    case BASIC_BYTE:
+                    case BASIC_INT:
+                    case BASIC_SHORT:
+                    case BASIC_LONG:
+                    case BASIC_FLOAT:
+                    case BASIC_DOUBLE:
+                    case BASIC_STRING:
+                        return true;
+                    default:
+                        throw new SQLException(srcEntityClassName + " can not cast " + targetEntityClassName);
+                }
+            default:
+                return false;
+        }
     }
 
     public static Entity basicTypeArr2Vector(Object srcValue,Entity targetEntity) throws SQLException{
@@ -581,6 +526,8 @@ public class TypeCast {
         if(srcValueFromArr instanceof Scalar){
             throw new SQLException("you need use com.xxdb.data.Vector load com.xxdb.data.Scalar");
         }
+        if(!CheckedBasicType(srcValueFromListClassName,targetEntityClassName)) return null;
+
         switch (srcValueFromListClassName){
             case BOOLEAN:
                 switch (targetEntityClassName){
@@ -730,6 +677,9 @@ public class TypeCast {
     public static Entity basicType_db2db(Entity srcEntity, Entity targetEntity) throws SQLException{
         String targetEntityClassName = targetEntity.getClass().getName();
         String srcEntityClassName = srcEntity.getClass().getName();
+
+        if(!CheckedBasicType(srcEntityClassName,targetEntityClassName)) return null;
+
         switch (srcEntityClassName){
             case BASIC_BOOLEAN:
             case BASIC_BYTE:
@@ -775,6 +725,9 @@ public class TypeCast {
     public static Entity basicType_java2db(Object srcValue, Entity targetEntity) throws SQLException{
         String targetEntityClassName = targetEntity.getClass().getName();
         String srcValueClassName = srcValue.getClass().getName();
+
+        if(!CheckedBasicType(srcValueClassName,targetEntityClassName)) return null;
+
         switch (srcValueClassName) {
             case BOOLEAN:
                 switch (targetEntityClassName) {
@@ -939,47 +892,25 @@ public class TypeCast {
         }
     }
 
-    public static long dateTime2long(Object value){
-        switch (value.getClass().getName()){
-            case BASIC_MONTH:
-                return ((BasicMonth) value).getInt();
-            case BASIC_DATE:
-                return ((BasicDate) value).getInt();
-            case BASIC_TIME:
-                return ((BasicTime) value).getInt();
-            case BASIC_MINUTE:
-                return ((BasicMinute) value).getInt();
-            case BASIC_SECOND:
-                return ((BasicSecond) value).getInt();
-            case BASIC_NANOTIME:
-                return ((BasicNanoTime) value).getLong();
-            case BASIC_TIMESTAMP:
-                return ((BasicTimestamp) value).getLong();
-            case BASIC_DATETIME:
-                return ((BasicDateTime) value).getInt();
-            case BASIC_NANOTIMESTAMP:
-                return ((BasicNanoTimestamp) value).getLong();
+    public static Temporal castTemporal(Object srcValue,String targetTemporalClassName){
+        String srcTemporalClassName = srcValue.getClass().getName();
+        Temporal srcTemporal = null;
+        switch (srcTemporalClassName){
             case DATE:
-                return Utils.countDays(((Date) value).toLocalDate());
+                srcTemporal = ((Date)srcValue).toLocalDate();
+                srcTemporalClassName = srcTemporal.getClass().getName();
+                break;
             case TIME:
-                return Utils.countSeconds(((Time) value).toLocalTime());
+                srcTemporal = ((Time)srcValue).toLocalTime();
+                srcTemporalClassName = srcTemporal.getClass().getName();
+                break;
             case TIMESTAMP:
-                return Utils.countMilliseconds(((Time) value).toLocalTime());
-            case LOCAL_DATE:
-                return Utils.countDays((LocalDate) value);
-            case LOCAL_TIME:
-                return Utils.countSeconds((LocalTime) value);
-            case LOCAL_DATETIME:
-                return Utils.countMilliseconds(((LocalDateTime) value));
-            case YEAR_MONTH:
-                return Utils.countMonths(((YearMonth) value));
+                srcTemporal = ((Timestamp)srcValue).toLocalDateTime();
+                srcTemporalClassName = srcTemporal.getClass().getName();
+                break;
             default:
-                return -1;
+                srcTemporal = (Temporal)srcValue;
         }
-    }
-
-    public static Temporal castTemporal(Temporal srcTemporal,String targetTemporalClassName){
-        String srcTemporalClassName = srcTemporal.getClass().getName();
         switch (targetTemporalClassName){
             case YEAR_MONTH:
                 switch (srcTemporalClassName){
