@@ -42,7 +42,7 @@ public class Main {
                 new BasicTime(LocalTime.parse("13:30:10.008")),
                 new BasicMinute(LocalTime.parse("13:30:10")),
                 new BasicSecond(LocalTime.parse("13:30:10")),
-                new BasicDateTime(LocalDateTime.parse("2012-06-13T13:30:10")),
+                new BasicMinute(LocalTime.parse("13:30:10")),
                 new BasicTimestamp(LocalDateTime.parse("2012-06-13T13:30:10.008")),
                 new BasicNanoTime(LocalTime.parse("13:30:10.008007006")),
                 new BasicDate(LocalDate.parse("2013-06-13"))};
@@ -554,15 +554,9 @@ public class Main {
         dbConnection.connect("127.0.0.1",8848);
         BasicIntVector entity1 = (BasicIntVector)dbConnection.run("1..10000000");
         List<Entity> entities = new ArrayList<>(5);
-        //entities.add(new BasicString("t1"));
         for(int i =0; i< 4; i++){
             entities.add(entity1);
         }
-
-//        dbConnection.run("t1 = table(1 as a, 2 as b, 3 as c, 4 as d)");
-//        dbConnection.run("tableInsert",entities);
-
-
 
         try{
             Class.forName(JDBC_DRIVER);
@@ -639,5 +633,71 @@ public class Main {
             }
         }
         System.out.println("TestPreparedStatement end");
+    }
+
+    public static void TestTypeCast(){
+        System.out.println("TestTypeCast begin");
+        Object[] dateTime = new Object[]{
+                Date.valueOf("2013-06-14"),
+                Time.valueOf("13:30:10"),
+                Timestamp.valueOf("2012-06-13 13:30:10.008007007"),
+                YearMonth.parse("2016-07"),
+                LocalTime.parse("13:30:10.009"),
+                LocalDate.parse("2013-06-14"),
+                LocalDateTime.parse("2012-06-13T13:30:10.008007007"),
+                new BasicDate(LocalDate.parse("2013-06-14")),
+                new BasicMonth(YearMonth.parse("2016-07")),
+                new BasicTime(LocalTime.parse("13:30:10.009")),
+                new BasicMinute(LocalTime.parse("13:31:10")),
+                new BasicSecond(LocalTime.parse("13:30:11")),
+                new BasicDateTime(LocalDateTime.parse("2012-06-13T13:30:11")),
+                new BasicTimestamp(LocalDateTime.parse("2012-06-13T13:30:10.009")),
+                new BasicNanoTime(LocalTime.parse("13:30:10.008007007")),
+                new BasicNanoTimestamp(LocalDateTime.parse("2012-06-13T13:30:10.008007007"))};
+
+        Object[] dateTimeList = new Object[dateTime.length];
+        Object[] dateTimeArr = new Object[dateTime.length];
+        int size = 3;
+
+        for(int i=0, ilen = dateTime.length; i<ilen; ++i){
+            List<Object> objectList = new ArrayList<>();
+            Object[] objectArr = new Object[size];
+            for (int j=0; j<size; ++j){
+                objectList.add(dateTime[i]);
+                objectArr[j] = dateTime[i];
+            }
+            dateTimeList[i] = objectList;
+            dateTimeArr[i] = objectArr;
+        }
+
+
+        Entity[] targetDateTimeEntities = new Entity[]{
+                new BasicDate(LocalDate.parse("2013-06-14")),
+                new BasicMonth(YearMonth.parse("2016-07")),
+                new BasicTime(LocalTime.parse("13:30:10.009")),
+                new BasicMinute(LocalTime.parse("13:31:10")),
+                new BasicSecond(LocalTime.parse("13:30:11")),
+                new BasicDateTime(LocalDateTime.parse("2012-06-13T13:30:11")),
+                new BasicTimestamp(LocalDateTime.parse("2012-06-13T13:30:10.009")),
+                new BasicNanoTime(LocalTime.parse("13:30:10.008007007")),
+                new BasicNanoTimestamp(LocalDateTime.parse("2012-06-13T13:30:10.008007007"))};
+
+        Object[] objects = dateTimeArr;
+
+        try {
+            for(int i=0, ilen = objects.length; i<ilen; ++i){
+                String srcValueClassName = objects[i].getClass().getName();
+                for (int j=0, jlen = targetDateTimeEntities.length; j<jlen; ++j){
+                    String targetEntityClassName = targetDateTimeEntities[j].getClass().getName();
+                    System.out.println(srcValueClassName + "(" + objects[i] + ")" + " ==> " + targetEntityClassName);
+                    Entity entity = TypeCast.java2db(objects[i],targetDateTimeEntities[j]);
+                    System.out.println(entity.getClass().getName() + " ==> " + entity.getString());
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+        System.out.println("TestTypeCast end");
     }
 }

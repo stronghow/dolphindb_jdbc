@@ -39,7 +39,7 @@ public class JDBCResultSet implements ResultSet{
 
     private boolean isClosed = false;
 
-    private boolean isUpdateable = true;
+    private boolean isUpdateAble = true;
 
 
     public JDBCResultSet(JDBCConnection conn, JDBCStatement statement, Entity entity, String sql) throws SQLException{
@@ -63,16 +63,16 @@ public class JDBCResultSet implements ResultSet{
         }
 
         if(sql == null || sql.length() == 0){
-            this.isUpdateable = false;
+            this.isUpdateAble = false;
         }else{
-            this.isUpdateable = Utils.isUpdateable(sql);
+            this.isUpdateAble = Utils.isUpdateable(sql);
 
-            if(this.isUpdateable){
+            if(this.isUpdateAble){
                 this.tableName = Utils.getTableName(sql);
                 if(Utils.isUpdateable(this.tableName)){
                     String s = run("typestr " + tableName).getString();
                     if(!s.equals("IN-MEMORY TABLE")){
-                        this.isUpdateable = false;
+                        this.isUpdateAble = false;
                     }else{
                         tableNameArg = new BasicString(tableName);
                     }
@@ -1467,7 +1467,7 @@ public class JDBCResultSet implements ResultSet{
     }
 
      public void isUpdateable() throws SQLException{
-         if(!isUpdateable) throw new SQLException("Unable to update join table");
+         if(!isUpdateAble) throw new SQLException("Unable to update join table");
      }
 
     private void createArguments(){
