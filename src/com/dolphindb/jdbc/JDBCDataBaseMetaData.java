@@ -1,9 +1,14 @@
 package com.dolphindb.jdbc;
 
+import com.xxdb.data.BasicIntVector;
+import com.xxdb.data.BasicStringVector;
 import com.xxdb.data.BasicTable;
+import com.xxdb.data.Vector;
 
 import java.sql.*;
 import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.List;
 
 public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
@@ -15,6 +20,7 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
     private JDBCStatement statement;
     private static  String STRINGFUNCTIONS;
     private static ResultSet TypeInfo;
+    private static ResultSet Catalogs;
     public JDBCDataBaseMetaData(JDBCConnection connection, JDBCStatement statement){
         this.connection = connection;
         this.statement = statement;
@@ -67,13 +73,14 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
     @Override
     public ResultSet getCatalogs() throws SQLException{
-        try {
-            BasicTable basicTable = (BasicTable) connection.getDbConnection().run(MessageFormat.format("TABLE_CAT=(`{0},`{1});table(TABLE_CAT)", com.dolphindb.jdbc.Driver.DB,DATABASE_NAME));
-            return new JDBCResultSet(connection,statement,basicTable,"");
-        }catch (Exception e){
-            throw new SQLException(e);
+        if(Catalogs == null){
+            List<String> colName = Arrays.asList("TABLE_CAT");
+            String[] tableCatArr = new String[]{com.dolphindb.jdbc.Driver.DB,DATABASE_NAME};
+            List<Vector> cols = Arrays.asList(new BasicStringVector(tableCatArr));
+            BasicTable basicTable = new BasicTable(colName,cols);
+            Catalogs =  new JDBCResultSet(connection,statement,basicTable,"");
         }
-
+        return Catalogs;
     }
 
     @Override
@@ -373,20 +380,18 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
     }
 
     @Override
-    public ResultSet getTypeInfo() {
-        if(TypeInfo == null){
-            try {
-                BasicTable table = (BasicTable) connection.getDbConnection().run("SQL_DATA_TYPE = (VOID, BOOL, CHAR, SHORT, INT, LONG, DATE, MONTH, TIME, MINUTE, SECOND, DATETIME, TIMESTAMP, NANOTIME, NANOTIMESTAMP, FLOAT, DOUBLE, SYMBOL, STRING, ANY);\n" +
-                        "\n" +
-                        "TYPE_NAME = cast(SQL_DATA_TYPE, STRING);\n" +
-                        "\n" +
-                        "BYTES  = (1, 1, 1, 2, 4, 8, 4, 4, 4, 4, 4, 4, 8, 8, 8, 4, 8, 4, 0, 0);\n" +
-                        "\n" +
-                        "table(TYPE_NAME, SQL_DATA_TYPE, BYTES);");
-                TypeInfo = new JDBCResultSet(connection,statement,table,"");
-            }catch (Exception e){
-                e.printStackTrace();
-            }
+    public ResultSet getTypeInfo() throws SQLException{
+        if(TypeInfo == null) {
+            List<String> colName = Arrays.asList("TYPE_NAME","SQL_DATA_TYPE","BYTES");
+            String[] typeNameArr = new String[]{"VOID", "BOOL", "CHAR", "SHORT", "INT", "LONG", "DATE", "MONTH", "TIME", "MINUTE", "SECOND", "DATETIME", "TIMESTAMP", "NANOTIME", "NANOTIMESTAMP", "FLOAT", "DOUBLE", "SYMBOL", "STRING", "ANY"};
+            int[] sqlDateTypeArr = new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 24};
+            int[] bytesArr = new int[]{1, 1, 1, 2, 4, 8, 4, 4, 4, 4, 4, 4, 8, 8, 8, 4, 8, 4, 0, 0};
+            BasicStringVector typeName = new BasicStringVector(typeNameArr);
+            BasicIntVector sqlDateType = new BasicIntVector(sqlDateTypeArr);
+            BasicIntVector bytes = new BasicIntVector(bytesArr);
+            List<Vector> cols = Arrays.asList(typeName,sqlDateType,bytes);
+            BasicTable table = new BasicTable(colName, cols);
+            TypeInfo = new JDBCResultSet(connection, statement, table, "");
         }
         return TypeInfo;
     }
@@ -943,5 +948,11 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
         return false;
+    }
+
+    private void CheckClosed() throws SQLException{
+        if(this.connection == null || this.connection.isClosed()){
+            throw new SQLException("Connection is Closed");
+        }
     }
 }
