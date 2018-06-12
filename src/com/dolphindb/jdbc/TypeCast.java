@@ -19,6 +19,8 @@ public class TypeCast {
 
     private static final String VECTOR = "Vector";
 
+    private static final String BASIC_ANY_VECTOR = PACKAGE_NAME + "BasicAny" + VECTOR;
+
     // dateTime
     public static final String BASIC_MONTH = PACKAGE_NAME + "BasicMonth";
     public static final String BASIC_DATE = PACKAGE_NAME + "BasicDate";
@@ -107,12 +109,14 @@ public class TypeCast {
 
     public static Entity dateTimeCast(Object srcValue, Entity targetEntity) throws Exception{
         Entity castEntity;
-        castEntity = dataTime_java2db(srcValue,targetEntity);
-        if(castEntity != null) return castEntity;
         if(srcValue instanceof Scalar || srcValue instanceof Vector) {
             castEntity = dateTime_db2db((Entity) srcValue, targetEntity);
             if (castEntity != null) return castEntity;
         }
+
+        castEntity = dataTime_java2db(srcValue,targetEntity);
+        if(castEntity != null) return castEntity;
+
         if(srcValue instanceof List){
             castEntity = dateTimeArr2Vector(((List) srcValue).toArray(),targetEntity);
             if (castEntity != null) return castEntity;
@@ -126,12 +130,15 @@ public class TypeCast {
 
     public static Entity basicTypeCast(Object srcValue, Entity targetEntity) throws SQLException{
         Entity castEntity;
-        castEntity = basicType_java2db(srcValue,targetEntity);
-        if(castEntity != null) return castEntity;
+
         if(srcValue instanceof Scalar || srcValue instanceof Vector) {
             castEntity = basicType_db2db((Entity) srcValue, targetEntity);
             if (castEntity != null) return castEntity;
         }
+
+        castEntity = basicType_java2db(srcValue,targetEntity);
+        if(castEntity != null) return castEntity;
+
         if(srcValue instanceof List){
             castEntity = basicTypeArr2Vector(((List) srcValue).toArray(),targetEntity);
             if (castEntity != null) return castEntity;
@@ -144,8 +151,11 @@ public class TypeCast {
     }
 
     public static Entity dataTime_java2db(Object srcValue, Entity targetEntity) throws SQLException{
+        if(srcValue instanceof Entity) return null;
+
         String targetEntityClassName = targetEntity.getClass().getName();
         String srcEntityClassName = srcValue.getClass().getName();
+
         if(!CheckedDateTime(srcEntityClassName,targetEntityClassName)) {
             return null;
         }
@@ -199,6 +209,7 @@ public class TypeCast {
             case BASIC_TIMESTAMP_VECTOR:
             case BASIC_DATETIME_VECTOR:
             case BASIC_NANOTIMESTAMP_VECTOR:
+            case BASIC_ANY_VECTOR:
             case DATE:
             case TIME:
             case TIMESTAMP:
@@ -342,113 +353,81 @@ public class TypeCast {
 
     public static Entity dateTime_db2db(Entity srcEntity, Entity targetEntity) throws Exception{
         String targetEntityClassName = targetEntity.getClass().getName();
-        String srcEntityClassName = srcEntity.getClass().getName();
-        if(!CheckedDateTime(srcEntityClassName,targetEntityClassName))
-            return null;
-        Temporal srcTemporal = null;
-        Temporal[] srcTempos = null;
-        switch (srcEntityClassName){
-            case BASIC_MONTH:
-                srcTemporal = ((BasicMonth)srcEntity).getTemporal();
-                return Temporal2dateTime(srcTemporal,srcEntityClassName,targetEntityClassName);
-            case BASIC_DATE:
-                srcTemporal = ((BasicDate)srcEntity).getTemporal();
-                return Temporal2dateTime(srcTemporal,srcEntityClassName,targetEntityClassName);
-            case BASIC_TIME:
-                srcTemporal = ((BasicTime)srcEntity).getTemporal();
-                return Temporal2dateTime(srcTemporal,srcEntityClassName,targetEntityClassName);
-            case BASIC_MINUTE:
-                srcTemporal = ((BasicMinute)srcEntity).getTemporal();
-                return Temporal2dateTime(srcTemporal,srcEntityClassName,targetEntityClassName);
-            case BASIC_SECOND:
-                srcTemporal = ((BasicSecond)srcEntity).getTemporal();
-                return Temporal2dateTime(srcTemporal,srcEntityClassName,targetEntityClassName);
-            case BASIC_NANOTIME:
-                srcTemporal = ((BasicNanoTime)srcEntity).getTemporal();
-                return Temporal2dateTime(srcTemporal,srcEntityClassName,targetEntityClassName);
-            case BASIC_TIMESTAMP:
-                srcTemporal = ((BasicTimestamp)srcEntity).getTemporal();
-                return Temporal2dateTime(srcTemporal,srcEntityClassName,targetEntityClassName);
-            case BASIC_DATETIME:
-                srcTemporal = ((BasicDateTime)srcEntity).getTemporal();
-                return Temporal2dateTime(srcTemporal,srcEntityClassName,targetEntityClassName);
-            case BASIC_NANOTIMESTAMP:
-                srcTemporal = ((BasicNanoTimestamp)srcEntity).getTemporal();
-                return Temporal2dateTime(srcTemporal,srcEntityClassName,targetEntityClassName);
-            case BASIC_MONTH_VECTOR: {
-                int size = srcEntity.rows();
-                srcTempos = new Temporal[size];
-                for (int i = 0; i < size; ++i) {
-                    srcTempos[i] = ((BasicMonthVector) srcEntity).getMonth(i);
-                }
-                return Tempos2dateTime(srcTempos, srcEntityClassName, targetEntityClassName);
-            }
-            case BASIC_DATE_VECTOR: {
-                int size = srcEntity.rows();
-                srcTempos = new Temporal[size];
-                for (int i = 0; i < size; ++i) {
-                    srcTempos[i] = ((BasicDateVector) srcEntity).getDate(i);
-                }
-                return Tempos2dateTime(srcTempos, srcEntityClassName, targetEntityClassName);
-            }
-            case BASIC_TIME_VECTOR: {
-                int size = srcEntity.rows();
-                srcTempos = new Temporal[size];
-                for (int i = 0; i < size; ++i) {
-                    srcTempos[i] = ((BasicTimeVector) srcEntity).getTime(i);
-                }
-                return Tempos2dateTime(srcTempos, srcEntityClassName, targetEntityClassName);
-            }
-            case BASIC_MINUTE_VECTOR:{
-                int size = srcEntity.rows();
-                srcTempos = new Temporal[size];
-                for (int i = 0; i < size; ++i) {
-                    srcTempos[i] = ((BasicMinuteVector) srcEntity).getMinute(i);
-                }
-                return Tempos2dateTime(srcTempos, srcEntityClassName, targetEntityClassName);
-            }
-            case BASIC_SECOND_VECTOR:{
-                int size = srcEntity.rows();
-                srcTempos = new Temporal[size];
-                for (int i = 0; i < size; ++i) {
-                    srcTempos[i] = ((BasicSecondVector) srcEntity).getSecond(i);
-                }
-                return Tempos2dateTime(srcTempos, srcEntityClassName, targetEntityClassName);
-            }
-            case BASIC_NANOTIME_VECTOR:{
-                int size = srcEntity.rows();
-                srcTempos = new Temporal[size];
-                for (int i = 0; i < size; ++i) {
-                    srcTempos[i] = ((BasicNanoTimeVector) srcEntity).getNanoTime(i);
-                }
-                return Tempos2dateTime(srcTempos, srcEntityClassName, targetEntityClassName);
-            }
-            case BASIC_TIMESTAMP_VECTOR:{
-                int size = srcEntity.rows();
-                srcTempos = new Temporal[size];
-                for (int i = 0; i < size; ++i) {
-                    srcTempos[i] = ((BasicTimestampVector) srcEntity).getTimestamp(i);
-                }
-                return Tempos2dateTime(srcTempos, srcEntityClassName, targetEntityClassName);
-            }
-            case BASIC_DATETIME_VECTOR:{
-                int size = srcEntity.rows();
-                srcTempos = new Temporal[size];
-                for (int i = 0; i < size; ++i) {
-                    srcTempos[i] = ((BasicDateTimeVector) srcEntity).getDateTime(i);
-                }
-                return Tempos2dateTime(srcTempos, srcEntityClassName, targetEntityClassName);
-            }
-            case BASIC_NANOTIMESTAMP_VECTOR:{
-                int size = srcEntity.rows();
-                srcTempos = new Temporal[size];
-                for (int i = 0; i < size; ++i) {
-                    srcTempos[i] = ((BasicNanoTimestampVector) srcEntity).getNanoTimestamp(i);
-                }
-                return Tempos2dateTime(srcTempos, srcEntityClassName, targetEntityClassName);
-            }
-            default:
+        String srcEntityClassName = null;
+        if(srcEntity.isScalar()){
+            Temporal srcTemporal = null;
+            srcEntityClassName = srcEntity.getClass().getName();
+            if(!CheckedDateTime(srcEntityClassName,targetEntityClassName))
                 return null;
+            switch (srcEntityClassName) {
+                case BASIC_MONTH:
+                case BASIC_DATE:
+                case BASIC_TIME:
+                case BASIC_MINUTE:
+                case BASIC_SECOND:
+                case BASIC_NANOTIME:
+                case BASIC_TIMESTAMP:
+                case BASIC_DATETIME:
+                case BASIC_NANOTIMESTAMP:
+                    srcTemporal = ((Scalar)srcEntity).getTemporal();
+                    return Temporal2dateTime(srcTemporal, srcEntityClassName, targetEntityClassName);
+                default:
+                    throw new SQLException(srcEntityClassName + " can not cast " + targetEntityClassName);
+
+            }
+        }else if (srcEntity.isVector()){
+            if(srcEntity.rows() == 0) throw new SQLException("Vector rows can not 0");
+            srcEntityClassName = srcEntity.getClass().getName();
+            String srcScalarFromVectorClassName = ((Vector) srcEntity).get(0).getClass().getName();
+            if(!CheckedDateTime(srcScalarFromVectorClassName,targetEntityClassName))
+                return null;
+            Temporal[] srcTempos = null;
+            switch (srcEntityClassName){
+                case BASIC_MONTH_VECTOR:
+                case BASIC_DATE_VECTOR:
+                case BASIC_TIME_VECTOR:
+                case BASIC_MINUTE_VECTOR:
+                case BASIC_SECOND_VECTOR:
+                case BASIC_NANOTIME_VECTOR:
+                case BASIC_TIMESTAMP_VECTOR:
+                case BASIC_DATETIME_VECTOR:
+                case BASIC_NANOTIMESTAMP_VECTOR: {
+                    int size = srcEntity.rows();
+                    srcTempos = new Temporal[size];
+                    for (int i = 0; i < size; ++i) {
+                        srcTempos[i] = ((Vector) srcEntity).get(i).getTemporal();
+                    }
+                    return Tempos2dateTime(srcTempos, srcEntityClassName, targetEntityClassName);
+                }
+                case BASIC_ANY_VECTOR: {
+                    if (!CheckedDateTime(srcScalarFromVectorClassName, targetEntityClassName)) {
+                        return null;
+                    }
+                    switch (srcScalarFromVectorClassName) {
+                        case BASIC_MONTH:
+                        case BASIC_DATE:
+                        case BASIC_TIME:
+                        case BASIC_MINUTE:
+                        case BASIC_SECOND:
+                        case BASIC_NANOTIME:
+                        case BASIC_TIMESTAMP:
+                        case BASIC_DATETIME:
+                        case BASIC_NANOTIMESTAMP:
+                            int size = srcEntity.rows();
+                            srcTempos = new Temporal[size];
+                            for (int i = 0; i < size; ++i) {
+                                srcTempos[i] = ((Vector) srcEntity).get(i).getTemporal();
+                            }
+                            return Tempos2dateTime(srcTempos, srcScalarFromVectorClassName, targetEntityClassName);
+                        default:
+                            throw new SQLException(srcScalarFromVectorClassName + " can not cast " + targetEntityClassName);
+                    }
+                }
+                default:
+                    return null;
+            }
+        }else {
+            throw new SQLException(srcEntity.getClass().getName() + " can not cast " +srcEntityClassName);
         }
 
     }
@@ -487,6 +466,7 @@ public class TypeCast {
             case BASIC_FLOAT_VECTOR:
             case BASIC_DOUBLE_VECTOR:
             case BASIC_STRING_VECTOR:
+            case BASIC_ANY_VECTOR:
             case BOOLEAN:
             case BYTE:
             case CHAR:
@@ -676,53 +656,118 @@ public class TypeCast {
 
     public static Entity basicType_db2db(Entity srcEntity, Entity targetEntity) throws SQLException{
         String targetEntityClassName = targetEntity.getClass().getName();
-        String srcEntityClassName = srcEntity.getClass().getName();
-
-        if(!CheckedBasicType(srcEntityClassName,targetEntityClassName)) return null;
-
-        switch (srcEntityClassName){
-            case BASIC_BOOLEAN:
-            case BASIC_BYTE:
-            case BASIC_INT:
-            case BASIC_SHORT:
-            case BASIC_LONG:
-            case BASIC_FLOAT:
-            case BASIC_DOUBLE:
-            case BASIC_BOOLEAN_VECTOR:
-            case BASIC_BYTE_VECTOR:
-            case BASIC_INT_VECTOR:
-            case BASIC_SHORT_VECTOR:
-            case BASIC_LONG_VECTOR:
-            case BASIC_FLOAT_VECTOR:
-            case BASIC_DOUBLE_VECTOR:
-                switch (targetEntityClassName){
-                    case BASIC_BOOLEAN:
-                    case BASIC_BYTE:
-                    case BASIC_INT:
-                    case BASIC_SHORT:
-                    case BASIC_LONG:
-                    case BASIC_FLOAT:
-                    case BASIC_DOUBLE:
-                    case BASIC_STRING:
-                        return srcEntity;
-                    default:
-                        throw new SQLException(srcEntityClassName + " can not cast " + targetEntityClassName);
-                }
-            case BASIC_STRING:
-            case BASIC_STRING_VECTOR:
-                switch (targetEntityClassName){
-                    case BASIC_STRING:
-                        return srcEntity;
-                    default:
-                        throw new SQLException(srcEntityClassName + " can not cast to " + targetEntityClassName);
-                }
-            default:
+        String srcEntityClassName = null;
+        if(srcEntity.isScalar()){
+            srcEntityClassName = srcEntity.getClass().getName();
+            if(!CheckedBasicType(srcEntityClassName,targetEntityClassName))
                 return null;
+            switch (srcEntityClassName) {
+                case BASIC_BOOLEAN:
+                case BASIC_BYTE:
+                case BASIC_INT:
+                case BASIC_SHORT:
+                case BASIC_LONG:
+                case BASIC_FLOAT:
+                case BASIC_DOUBLE:
+                    switch (targetEntityClassName){
+                        case BASIC_BOOLEAN:
+                        case BASIC_BYTE:
+                        case BASIC_INT:
+                        case BASIC_SHORT:
+                        case BASIC_LONG:
+                        case BASIC_FLOAT:
+                        case BASIC_DOUBLE:
+                        case BASIC_STRING:
+                            return srcEntity;
+                        default:
+                            throw new SQLException(srcEntityClassName + " can not cast " + targetEntityClassName);
+                    }
+                case BASIC_STRING:
+                    switch (targetEntityClassName){
+                        case BASIC_STRING:
+                            return srcEntity;
+                        default:
+                            throw new SQLException(srcEntityClassName + " can not cast to " + targetEntityClassName);
+                    }
+                default:
+                    return null;
+            }
+        }else if (srcEntity.isVector()) {
+            if (srcEntity.rows() == 0) throw new SQLException("Vector rows can not 0");
+            srcEntityClassName = srcEntity.getClass().getName();
+            String srcScalarFromVectorClassName = ((Vector) srcEntity).get(0).getClass().getName();
+            if (!CheckedBasicType(srcEntityClassName, targetEntityClassName))
+                return null;
+            switch (srcEntityClassName){
+                case BASIC_BOOLEAN_VECTOR:
+                case BASIC_BYTE_VECTOR:
+                case BASIC_INT_VECTOR:
+                case BASIC_SHORT_VECTOR:
+                case BASIC_LONG_VECTOR:
+                case BASIC_FLOAT_VECTOR:
+                case BASIC_DOUBLE_VECTOR:
+                    switch (targetEntityClassName) {
+                        case BASIC_BOOLEAN:
+                        case BASIC_BYTE:
+                        case BASIC_INT:
+                        case BASIC_SHORT:
+                        case BASIC_LONG:
+                        case BASIC_FLOAT:
+                        case BASIC_DOUBLE:
+                        case BASIC_STRING:
+                            return srcEntity;
+                        default:
+                            throw new SQLException(srcEntityClassName + " can not cast " + targetEntityClassName);
+                    }
+                case BASIC_STRING_VECTOR:
+                    switch (targetEntityClassName){
+                        case BASIC_STRING:
+                            return srcEntity;
+                        default:
+                            throw new SQLException(srcEntityClassName + " can not cast to " + targetEntityClassName);
+                    }
+                case BASIC_ANY_VECTOR:
+                    switch (srcScalarFromVectorClassName){
+                        case BASIC_BOOLEAN:
+                        case BASIC_BYTE:
+                        case BASIC_INT:
+                        case BASIC_SHORT:
+                        case BASIC_LONG:
+                        case BASIC_FLOAT:
+                        case BASIC_DOUBLE:
+                            switch (targetEntityClassName){
+                                case BASIC_BOOLEAN:
+                                case BASIC_BYTE:
+                                case BASIC_INT:
+                                case BASIC_SHORT:
+                                case BASIC_LONG:
+                                case BASIC_FLOAT:
+                                case BASIC_DOUBLE:
+                                case BASIC_STRING:
+                                    return srcEntity;
+                                default:
+                                    throw new SQLException(srcScalarFromVectorClassName + " can not cast " + targetEntityClassName);
+                            }
+                        case BASIC_STRING:
+                            switch (targetEntityClassName){
+                                case BASIC_STRING:
+                                    return srcEntity;
+                                default:
+                                    throw new SQLException(srcScalarFromVectorClassName + " can not cast to " + targetEntityClassName);
+                            }
+                        default:
+                            return null;
+                    }
+            }
+        }else{
+            throw new SQLException(srcEntity.getClass().getName() + " can not cast " +srcEntityClassName);
         }
-
+        return null;
     }
 
     public static Entity basicType_java2db(Object srcValue, Entity targetEntity) throws SQLException{
+        if(srcValue instanceof Entity) return null;
+
         String targetEntityClassName = targetEntity.getClass().getName();
         String srcValueClassName = srcValue.getClass().getName();
 
