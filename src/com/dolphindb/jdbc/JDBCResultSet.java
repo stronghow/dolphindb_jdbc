@@ -10,7 +10,6 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.YearMonth;
 import java.util.*;
 
 /**
@@ -56,22 +55,24 @@ public class JDBCResultSet implements ResultSet{
 
         findColumnHashMap = new HashMap<>(this.table.columns());
 
-        insertRowMap = new HashMap<>(this.table.columns()+1);
-
         for(int i=0; i<this.table.columns(); ++i){
             findColumnHashMap.put(this.table.getColumnName(i),i+1);
         }
 
         this.isUpdateAble = false;
 
+        if(this.isUpdateAble){
+            insertRowMap = new HashMap<>(this.table.columns()+1);
+        }
+
 //        if(sql == null || sql.length() == 0){
 //            this.isUpdateAble = false;
 //        }else{
-//            this.isUpdateAble = Utils.isUpdateable(sql);
+//            this.isUpdateAble = Utils.isUpdateAble(sql);
 //
 //            if(this.isUpdateAble){
 //                this.tableName = Utils.getTableName(sql);
-//                if(Utils.isUpdateable(this.tableName)){
+//                if(Utils.isUpdateAble(this.tableName)){
 //                    String s = run("typestr " + tableName).getString();
 //                    if(!s.equals("IN-MEMORY TABLE")){
 //                        this.isUpdateAble = false;
@@ -102,6 +103,7 @@ public class JDBCResultSet implements ResultSet{
         isClosed = true;
         findColumnHashMap = null;
         insertRowMap = null;
+        arguments = null;
         table = null;
     }
 
@@ -696,7 +698,7 @@ public class JDBCResultSet implements ResultSet{
 
     @Override
     public void insertRow() throws SQLException {
-        isUpdateable();
+        isUpdateAble();
         try {
             if(insertRow == row){
                 createArguments();
@@ -716,12 +718,9 @@ public class JDBCResultSet implements ResultSet{
 
     @Override
     public void updateRow() throws SQLException {
-        isUpdateable();
+        isUpdateAble();
         if(updateRow == row){
             updateRun();
-//            for(int index : insertRowMap.keySet()){
-//                update1(index,insertRowMap.get(index));
-//            }
             table = loadTable();
             rows = table.rows();
         }
@@ -730,7 +729,7 @@ public class JDBCResultSet implements ResultSet{
 
     @Override
     public void deleteRow() throws SQLException {
-        isUpdateable();
+        isUpdateAble();
         StringBuilder sb = new StringBuilder("delete from ").append(tableName).append(" where ");
         for(int i=1; i<=table.columns(); ++i){
             sb.append(getColumnName(i)).append(" = ").append(Utils.java2db(getObject(i))).append(", ");
@@ -745,7 +744,7 @@ public class JDBCResultSet implements ResultSet{
     @Override
     public void refreshRow() throws SQLException {
         checkClosed();
-        isUpdateable();
+        isUpdateAble();
         BasicTable newTable = loadTable();
         try {
             for(int i=0; i<newTable.columns(); ++i){
@@ -760,7 +759,7 @@ public class JDBCResultSet implements ResultSet{
     @Override
     public void cancelRowUpdates() throws SQLException {
         checkClosed();
-        isUpdateable();
+        isUpdateAble();
         if(isInsert){
             throw new SQLException("cursor is on the insert row");
         }
@@ -771,7 +770,7 @@ public class JDBCResultSet implements ResultSet{
     @Override
     public void moveToInsertRow() throws SQLException {
         checkClosed();
-        isUpdateable();
+        isUpdateAble();
         isInsert = true;
     }
 
@@ -1296,7 +1295,7 @@ public class JDBCResultSet implements ResultSet{
 
     private void update(int columnIndex, Object value) throws SQLException{
         checkClosed();
-        isUpdateable();
+        isUpdateAble();
         if(isInsert){
             insertRow = row;
         }else{
@@ -1360,66 +1359,6 @@ public class JDBCResultSet implements ResultSet{
         }
     }
 
-    private String JAVA2DBString(Entity entity, Object value){
-        if(value instanceof Boolean){
-            return new BasicBoolean((boolean) value).getString();
-        }else if(value instanceof Byte){
-            return new BasicByte((byte) value).getString();
-        }else if(value instanceof Integer){
-            return new BasicInt((int) value).getString();
-        }else if(value instanceof Short){
-            return new BasicShort((short) value).getString();
-        }else if(value instanceof Long){
-            return new BasicLong((long) value).getString();
-        }else if(value instanceof Float){
-            return new BasicFloat((float) value).getString();
-        }else if(value instanceof Double){
-            return new BasicDouble((double) value).getString();
-        }else if(value instanceof String){
-            return "`" + new BasicString((String) value).getString();
-        }else if(value instanceof Date){
-            return JAVA2DBString4DataTime(entity,((Date) value).toLocalDate());
-        }else if(value instanceof Time){
-            return JAVA2DBString4DataTime(entity,((Time) value).toLocalTime());
-        }else if(value instanceof Timestamp){
-            return JAVA2DBString4DataTime(entity,((Timestamp) value).toLocalDateTime());
-        }else{
-            return JAVA2DBString4DataTime(entity,value);
-        }
-    }
-
-    private String JAVA2DBString4DataTime(Entity entity, Object value){
-        if(value instanceof LocalDate){
-            if(entity instanceof BasicDate){
-                return new BasicDate((LocalDate) value).getString();
-            }
-        }else if(value instanceof LocalTime){
-            if(entity instanceof BasicTime){
-                return new BasicTime((LocalTime) value).getString();
-            } else if(entity instanceof BasicMinuteVector){
-                return new BasicMinute((LocalTime) value).getString();
-            }else if(entity instanceof BasicSecondVector){
-                return new BasicSecond((LocalTime) value).getString();
-            }else if(entity instanceof BasicNanoTime){
-                return new BasicNanoTime((LocalTime) value).getString();
-            }
-        }else if(value instanceof LocalDateTime){
-            if(entity instanceof BasicTimestamp){
-                return new BasicTimestamp((LocalDateTime) value).getString();
-            }else if(entity instanceof BasicDateTime){
-                return new BasicDateTime((LocalDateTime) value).getString();
-            }else if(entity instanceof BasicNanoTimestampVector){
-                return new BasicNanoTimestamp((LocalDateTime) value).getString();
-            }
-        }else if(value instanceof YearMonth){
-            if(entity instanceof BasicMonth){
-                return new BasicMonth((YearMonth) value).getString();
-            }
-        }
-
-        return "";
-    }
-
     private String getColumnName(int columnIndex){
         return table.getColumnName(adjustColumnIndex(columnIndex));
     }
@@ -1466,7 +1405,7 @@ public class JDBCResultSet implements ResultSet{
         return obj;
     }
 
-     public void isUpdateable() throws SQLException{
+     public void isUpdateAble() throws SQLException{
          if(!isUpdateAble) throw new SQLException("Unable to update join table");
      }
 
