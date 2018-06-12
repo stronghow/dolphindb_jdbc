@@ -39,7 +39,7 @@ public class JDBCResultSet implements ResultSet{
 
     private boolean isClosed = false;
 
-    private boolean isUpdateAble = true;
+    private boolean isUpdateAble = false;
 
 
     public JDBCResultSet(JDBCConnection conn, JDBCStatement statement, Entity entity, String sql) throws SQLException{
@@ -62,27 +62,27 @@ public class JDBCResultSet implements ResultSet{
             findColumnHashMap.put(this.table.getColumnName(i),i+1);
         }
 
-        if(sql == null || sql.length() == 0){
-            this.isUpdateAble = false;
-        }else{
-            this.isUpdateAble = Utils.isUpdateable(sql);
+        this.isUpdateAble = false;
 
-            if(this.isUpdateAble){
-                this.tableName = Utils.getTableName(sql);
-                if(Utils.isUpdateable(this.tableName)){
-                    String s = run("typestr " + tableName).getString();
-                    if(!s.equals("IN-MEMORY TABLE")){
-                        this.isUpdateAble = false;
-                    }else{
-                        tableNameArg = new BasicString(tableName);
-                    }
-                }
-            }else{
-                this.tableName = "";
-            }
-        }
-
-        System.out.println(table.rows() + "  "+ table.columns());
+//        if(sql == null || sql.length() == 0){
+//            this.isUpdateAble = false;
+//        }else{
+//            this.isUpdateAble = Utils.isUpdateable(sql);
+//
+//            if(this.isUpdateAble){
+//                this.tableName = Utils.getTableName(sql);
+//                if(Utils.isUpdateable(this.tableName)){
+//                    String s = run("typestr " + tableName).getString();
+//                    if(!s.equals("IN-MEMORY TABLE")){
+//                        this.isUpdateAble = false;
+//                    }else{
+//                        tableNameArg = new BasicString(tableName);
+//                    }
+//                }
+//            }else{
+//                this.tableName = "";
+//            }
+//        }
     }
 
 
