@@ -1,19 +1,19 @@
 package com.dolphindb.jdbc;
 
 import com.xxdb.data.*;
+import com.xxdb.data.Vector;
 
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
+import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
+import java.util.*;
 
 public class JDBCPrepareStatement extends JDBCStatement implements PreparedStatement {
 
@@ -23,20 +23,47 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
 
     private List<Entity> arguments;
 
+    private BasicTable tableDFS;
+
     private boolean isInsert = false;
+
+    private boolean isUpdate = false;
+
+    private String tableType = null;
+
+    private BasicString  colNames;
+
+    private HashMap<Integer,Integer> colType;
+
 
     public JDBCPrepareStatement(JDBCConnection connection, String sql){
         super(connection);
         this.connection = connection;
-        this.sql = sql.trim();
+        this.sql = sql.trim()+" ";
         if(this.sql.startsWith("insert")){
             tableName = sql.substring(sql.indexOf("into") + "into".length(), sql.indexOf("values"));
             isInsert = true;
         }else if(this.sql.startsWith("tableInsert")){
             tableName = sql.substring(sql.indexOf("(") + "(".length(), sql.indexOf(","));
             isInsert = true;
+        }else if(sql.startsWith("append!")){
+            tableName = sql.substring(sql.indexOf("(") + "(".length(), sql.indexOf(","));
+            isInsert = true;
+        }else if(sql.contains(".append!")){
+            tableName = sql.split("\\.")[0];
+            isInsert = true;
+        }else if(this.sql.startsWith("update")){
+            tableName = sql.substring(sql.indexOf("update") + "update".length(), sql.indexOf("set"));
+            isUpdate = true;
+        }else if(sql.contains(".update!")){
+            tableName = sql.split("\\.")[0];
+            isUpdate = true;
         }
-        tableNameArg = new BasicString(tableName);
+
+        if(tableName != null){
+            tableNameArg = new BasicString(tableName);
+        }
+
         sqlSplit = this.sql.split("\\?");
         values = new Object[sqlSplit.length+1];
         arguments = new ArrayList<>(sqlSplit.length+1);
@@ -166,15 +193,7 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
     @Override
     public void setObject(int parameterIndex, Object object) throws SQLException{
         super.checkClosed();
-        if(object instanceof Date){
-            values[parameterIndex] = new BasicDate(LocalDate.parse(object.toString()));
-        }else if(object instanceof Time){
-            values[parameterIndex] = new BasicTime(LocalTime.parse(object.toString()));
-        }else if(object instanceof Timestamp){
-            values[parameterIndex] = new BasicTimestamp(LocalDateTime.parse(object.toString()));
-        }else{
-            values[parameterIndex] = object;
-        }
+        values[parameterIndex] = object;
     }
 
     @Override
@@ -194,8 +213,57 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
         try {
             if(isInsert){
                 createArguments();
-                BasicInt basicInt = (BasicInt) connection.getDbConnection().run("tableInsert",arguments);
-                objectQueue.offer(basicInt.getInt());
+                if(tableType == null){
+                    tableType = connection.getDbConnection().run("typestr " + tableName).getString();
+                }
+                BasicInt basicInt;
+
+                if(tableType.equals(IN_MEMORY_TABLE)){
+                    basicInt = (BasicInt) connection.getDbConnection().run("tableInsert",arguments);
+                    objectQueue.offer(basicInt.getInt());
+                }else{
+                    int size = arguments.size();
+                    if(size > 1) {
+                        if(arguments.get(1) instanceof Vector) {
+                            int insertRows = arguments.get(1).rows();
+                            List<String> cols = new ArrayList<>();
+                            List<Vector> entities = new ArrayList<>(size - 1);
+                            for (int i = 1, len = size; i < len; i++) {
+                                cols.add("" + i);
+                                entities.add((Vector) arguments.get(i));
+                            }
+                            BasicTable table = new BasicTable(cols, entities);
+                            List<Entity> newArguments = new ArrayList<>(2);
+                            if(tableDFS == null){
+                                tableDFS = (BasicTable) connection.getDbConnection().run(tableName);
+                            }
+                            newArguments.add(tableDFS);
+                            newArguments.add(table);
+                            connection.getDbConnection().run("append!", newArguments);
+                            objectQueue.offer(insertRows);
+                        }else{
+                            int insertRows = 1;
+                            List<String> cols = new ArrayList<>();
+                            List<Vector> entities = new ArrayList<>(size - 1);
+                            for (int i = 1, len = size; i < len; i++) {
+                                cols.add("" + i);
+                                BasicAnyVector basicAnyVector = new BasicAnyVector(1);
+                                basicAnyVector.set(0,(Scalar) arguments.get(i));
+                                entities.add(basicAnyVector);
+                            }
+                            BasicTable table = new BasicTable(cols, entities);
+                            List<Entity> newArguments = new ArrayList<>(2);
+                            if(tableDFS == null){
+                                tableDFS = (BasicTable) connection.getDbConnection().run(tableName);
+                            }
+                            newArguments.add(tableDFS);
+                            newArguments.add(table);
+                            connection.getDbConnection().run("append!", newArguments);
+                            objectQueue.offer(insertRows);
+                        }
+                    }
+                }
+
                 if(objectQueue.isEmpty()){
                     return false;
                 }else {
@@ -205,6 +273,34 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
                     }else{
                         return false;
                     }
+                }
+            }else if(isUpdate){
+                if(tableType == null){
+                    tableType = connection.getDbConnection().run("typestr " + tableName).getString();
+                }
+                if(tableType.equals(IN_MEMORY_TABLE)){
+                    String s = createSql();
+                    return super.execute(s);
+                }else{
+                    throw new SQLException("only local in-memory table can update");
+//                    StringBuilder sb = new StringBuilder("update!(").append(tableName).append(",");
+//                    String s = createSql();
+//                    System.out.println(s);
+//                    String substring = s.substring(s.indexOf("set") + "set".length(), s.indexOf("where"));
+//                    Properties properties = new Properties();
+//                    Utils.parseProperties(substring,properties,",","=");
+//                    StringBuilder newValues = new StringBuilder("<[");
+//                    for(String colName : properties.stringPropertyNames()){
+//                        sb.append("\"").append(colName.trim()).append("\"");
+//                        newValues.append(properties.getProperty(colName).trim()).append(",");
+//                    }
+//                    newValues.delete(newValues.length()-",".length(),newValues.length());
+//                    newValues.append("]>");
+//                    sb.append(",").append(newValues).append(",")
+//                            .append("<")
+//                            .append(s.substring(s.indexOf("where")+"where".length(),s.indexOf(";")))
+//                            .append(">)");
+//                    return super.execute(sb.toString());
                 }
             }else{
                 String s = createSql();
@@ -419,10 +515,23 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
     }
 
 
-    private void createArguments(){
+    private void createArguments() throws Exception{
+        if(colType == null){
+            BasicDictionary dictionary = (BasicDictionary) connection.getDbConnection().run("schema(" + tableName + ")");
+            BasicTable tableSchema =(BasicTable) dictionary.get(new BasicString("colDefs"));
+            BasicIntVector typeInt = (BasicIntVector) tableSchema.getColumn("typeInt");
+            int size = typeInt.rows();
+            colType = new LinkedHashMap<>(size);
+            for(int i=0; i<size; ++i){
+                colType.put(i+1,typeInt.getInt(i));
+            }
+        }
+
         arguments.add(tableNameArg);
         for(int i = 1; i< sqlSplit.length; ++i){
-            arguments.add((Entity) values[i]);
+            String s = TypeCast.TYPEINT2STRING.get(colType.get(i));
+            System.out.println(s);
+            arguments.add(TypeCast.java2db(values[i],s));
         }
     }
 

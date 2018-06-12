@@ -1311,7 +1311,8 @@ public class JDBCResultSet implements ResultSet{
     private void insert(int columnIndex, Object value) throws SQLException {
         checkClosed();
         try {
-            insertRowMap.put(columnIndex, TypeCast.java2db(value,table.getColumn(adjustColumnIndex(columnIndex)).get(row)));
+            Entity targetEntity = table.getColumn(adjustColumnIndex(columnIndex)).get(row);
+            insertRowMap.put(columnIndex, TypeCast.java2db(value,targetEntity.getClass().getName()));
         }catch (Exception e){
             throw new SQLException(e);
         }
@@ -1406,7 +1407,7 @@ public class JDBCResultSet implements ResultSet{
     }
 
      public void isUpdateAble() throws SQLException{
-         if(!isUpdateAble) throw new SQLException("Unable to update join table");
+         if(!isUpdateAble) throw new SQLException("Unable to update table");
      }
 
     private void createArguments(){

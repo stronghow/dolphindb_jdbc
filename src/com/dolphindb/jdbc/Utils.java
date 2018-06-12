@@ -25,7 +25,7 @@ public class Utils {
                 return s;
             }
         }else if(o instanceof String || o instanceof BasicString){
-            return "`"+o;
+            return "\""+o+"\"";
         }else if(o instanceof Character){
             return "'"+ o +"'";
         }else if(o instanceof Short || o instanceof BasicShort){
@@ -69,10 +69,12 @@ public class Utils {
     }
 
     public static void parseProperties(String s, Properties prop, String split1, String split2) throws SQLException {
+        System.out.println(s);
         String[] strings1 = s.split(split1);
         String[] strings2;
         for (String item : strings1){
             if(item.length()>0) {
+                System.out.println(item);
                 strings2 = item.split(split2);
                 if(strings2.length == 2) {
                     if(strings2[0].length()==0) throw new SQLException(item + "     is error");

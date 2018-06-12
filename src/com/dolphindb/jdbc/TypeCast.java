@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.temporal.Temporal;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 public class TypeCast {
@@ -65,6 +67,7 @@ public class TypeCast {
 
 
     //basicType
+    public static final String BASIC_VOID = PACKAGE_NAME + "Void";
     public static final String BASIC_BOOLEAN = PACKAGE_NAME + "BasicBoolean";
     public static final String BASIC_BYTE = PACKAGE_NAME + "BasicByte";
     public static final String BASIC_SHORT = PACKAGE_NAME + "BasicShort";
@@ -93,67 +96,100 @@ public class TypeCast {
     public static final String DOUBLE = "java.lang.Double";
     public static final String STRING = "java.lang.String";
 
-    public static Entity java2db(Object srcValue, Entity targetEntity) throws Exception{
+
+    public static final HashMap<Integer,String> TYPEINT2STRING = new LinkedHashMap<>();
+
+
+    static {
+        String[] arr = new String[]{BASIC_VOID,
+                BASIC_BOOLEAN,
+                BASIC_BYTE,
+                BASIC_SHORT,
+                BASIC_INT,
+                BASIC_LONG,
+                BASIC_DATE,
+                BASIC_MONTH,
+                BASIC_TIME,
+                BASIC_MINUTE,
+                BASIC_SECOND,
+                BASIC_DATETIME,
+                BASIC_TIMESTAMP,
+                BASIC_NANOTIME,
+                BASIC_NANOTIMESTAMP,
+                BASIC_FLOAT,
+                BASIC_DOUBLE,
+                BASIC_STRING,
+                BASIC_STRING
+        };
+        for(int i = 0, len = arr.length; i < len; ++i) {
+            TYPEINT2STRING.put(i, arr[i]);
+        }
+    }
+
+
+
+
+    public static Entity java2db(Object srcValue, String targetEntityClassName) throws Exception{
         String srcValueClassName = srcValue.getClass().getName();
-        String targetEntityClassName = targetEntity.getClass().getName();
         Entity castEntity = null;
         if(srcValueClassName.equals(targetEntityClassName) || srcValueClassName.startsWith(targetEntityClassName)){
             return (Entity) srcValue;
         }
-        castEntity = dateTimeCast(srcValue,targetEntity);
+        castEntity = dateTimeCast(srcValue,targetEntityClassName);
         if(castEntity != null) return castEntity;
-        castEntity = basicTypeCast(srcValue,targetEntity);
+        castEntity = basicTypeCast(srcValue,targetEntityClassName);
         if(castEntity != null) return castEntity;
         throw new SQLException("only support bool byte char short int long float double Date Time Timestamp YearMoth LocalDate LocalTime LocalDateTime Scalar Vector");
     }
 
-    public static Entity dateTimeCast(Object srcValue, Entity targetEntity) throws Exception{
+    public static Entity dateTimeCast(Object srcValue, String targetEntityClassName) throws Exception{
         Entity castEntity;
         if(srcValue instanceof Scalar || srcValue instanceof Vector) {
-            castEntity = dateTime_db2db((Entity) srcValue, targetEntity);
+            castEntity = dateTime_db2db((Entity) srcValue, targetEntityClassName);
             if (castEntity != null) return castEntity;
         }
 
-        castEntity = dataTime_java2db(srcValue,targetEntity);
+        castEntity = dataTime_java2db(srcValue,targetEntityClassName);
         if(castEntity != null) return castEntity;
 
         if(srcValue instanceof List){
-            castEntity = dateTimeArr2Vector(((List) srcValue).toArray(),targetEntity);
+            castEntity = dateTimeArr2Vector(((List) srcValue).toArray(),targetEntityClassName);
             if (castEntity != null) return castEntity;
         }
         if(srcValue instanceof Object[]){
-            castEntity = dateTimeArr2Vector(srcValue,targetEntity);
+            castEntity = dateTimeArr2Vector(srcValue,targetEntityClassName);
             if (castEntity != null) return castEntity;
         }
         return null;
     }
 
-    public static Entity basicTypeCast(Object srcValue, Entity targetEntity) throws SQLException{
+    public static Entity basicTypeCast(Object srcValue, String targetEntityClassName) throws SQLException{
         Entity castEntity;
 
         if(srcValue instanceof Scalar || srcValue instanceof Vector) {
-            castEntity = basicType_db2db((Entity) srcValue, targetEntity);
+            castEntity = basicType_db2db((Entity) srcValue, targetEntityClassName);
             if (castEntity != null) return castEntity;
         }
 
-        castEntity = basicType_java2db(srcValue,targetEntity);
+        castEntity = basicType_java2db(srcValue,targetEntityClassName);
         if(castEntity != null) return castEntity;
 
         if(srcValue instanceof List){
-            castEntity = basicTypeArr2Vector(((List) srcValue).toArray(),targetEntity);
+            castEntity = basicTypeArr2Vector(((List) srcValue).toArray(),targetEntityClassName);
             if (castEntity != null) return castEntity;
         }
+
+
         if(srcValue instanceof Object[]){
-            castEntity = basicTypeArr2Vector(srcValue,targetEntity);
+            castEntity = basicTypeArr2Vector(srcValue,targetEntityClassName);
             if (castEntity != null) return castEntity;
         }
         return null;
     }
 
-    public static Entity dataTime_java2db(Object srcValue, Entity targetEntity) throws SQLException{
+    public static Entity dataTime_java2db(Object srcValue, String targetEntityClassName) throws SQLException{
         if(srcValue instanceof Entity) return null;
 
-        String targetEntityClassName = targetEntity.getClass().getName();
         String srcEntityClassName = srcValue.getClass().getName();
 
         if(!CheckedDateTime(srcEntityClassName,targetEntityClassName)) {
@@ -351,8 +387,7 @@ public class TypeCast {
         }
     }
 
-    public static Entity dateTime_db2db(Entity srcEntity, Entity targetEntity) throws Exception{
-        String targetEntityClassName = targetEntity.getClass().getName();
+    public static Entity dateTime_db2db(Entity srcEntity, String targetEntityClassName) throws Exception{
         String srcEntityClassName = null;
         if(srcEntity.isScalar()){
             Temporal srcTemporal = null;
@@ -432,14 +467,13 @@ public class TypeCast {
 
     }
 
-    public static Entity dateTimeArr2Vector(Object srcValue,Entity targetEntity) throws SQLException{
+    public static Entity dateTimeArr2Vector(Object srcValue,String targetEntityClassName) throws SQLException{
         Object[] srcArr = (Object[])srcValue;
         int size = srcArr.length;
         if(size == 0){
             throw new SQLException(srcArr + "size can not 0 ");
         }
         Object srcValueFromArr = srcArr[0];
-        String targetEntityClassName = targetEntity.getClass().getName();
         String srcValueFromListClassName = srcValueFromArr.getClass().getName();
         if(srcValueFromArr instanceof Scalar){
             throw new SQLException("you need use com.xxdb.data.Vector load com.xxdb.data.Scalar");
@@ -494,19 +528,19 @@ public class TypeCast {
         }
     }
 
-    public static Entity basicTypeArr2Vector(Object srcValue,Entity targetEntity) throws SQLException{
+    public static Entity basicTypeArr2Vector(Object srcValue,String targetEntityClassName) throws SQLException{
         Object[] srcArr = (Object[])srcValue;
         int size = srcArr.length;
         if(size == 0){
             throw new SQLException(srcArr + "size can not 0 ");
         }
         Object srcValueFromArr = srcArr[0];
-        String targetEntityClassName = targetEntity.getClass().getName();
         String srcValueFromListClassName = srcValueFromArr.getClass().getName();
         if(srcValueFromArr instanceof Scalar){
             throw new SQLException("you need use com.xxdb.data.Vector load com.xxdb.data.Scalar");
         }
         if(!CheckedBasicType(srcValueFromListClassName,targetEntityClassName)) return null;
+
 
         switch (srcValueFromListClassName){
             case BOOLEAN:
@@ -654,8 +688,7 @@ public class TypeCast {
     }
 
 
-    public static Entity basicType_db2db(Entity srcEntity, Entity targetEntity) throws SQLException{
-        String targetEntityClassName = targetEntity.getClass().getName();
+    public static Entity basicType_db2db(Entity srcEntity, String targetEntityClassName) throws SQLException{
         String srcEntityClassName = null;
         if(srcEntity.isScalar()){
             srcEntityClassName = srcEntity.getClass().getName();
@@ -765,10 +798,9 @@ public class TypeCast {
         return null;
     }
 
-    public static Entity basicType_java2db(Object srcValue, Entity targetEntity) throws SQLException{
+    public static Entity basicType_java2db(Object srcValue, String targetEntityClassName) throws SQLException{
         if(srcValue instanceof Entity) return null;
 
-        String targetEntityClassName = targetEntity.getClass().getName();
         String srcValueClassName = srcValue.getClass().getName();
 
         if(!CheckedBasicType(srcValueClassName,targetEntityClassName)) return null;

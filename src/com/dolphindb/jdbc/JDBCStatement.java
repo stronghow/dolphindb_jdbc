@@ -24,6 +24,8 @@ public class JDBCStatement implements Statement {
     protected Object result;
     protected Deque<ResultSet> resultSets;
 
+    protected static final String IN_MEMORY_TABLE = "IN-MEMORY TABLE";
+
     protected boolean isClosed;
 
 
