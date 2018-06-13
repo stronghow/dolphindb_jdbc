@@ -27,15 +27,16 @@ public class Main {
 
     private static final String DB_URL1 = "jdbc:dolphindb://";
 
-    private static final String DB_URL_DFS = "jdbc:dolphindb://localhost:8499?databasePath=dfs://testdb3&partitionType=VALUE&partitionScheme=2000.01M..2016.12M";
+    private static final String DB_URL_DFS = "jdbc:dolphindb://192.168.1.30:8900?databasePath=dfs://valuedb&partitionType=VALUE&partitionScheme=2000.01M..2016.12M";
 
-    private static final String DB_URL_DFS1 = "jdbc:dolphindb://localhost:8499?databasePath=dfs://rangedb&partitionType=RANGE&partitionScheme= 0 5 10&locations= [`rh8503, `rh8502`rh8504]";
+    private static final String DB_URL_DFS1 = "jdbc:dolphindb://192.168.1.30:8900?databasePath=dfs://rangedb&partitionType=RANGE&partitionScheme= 0 5 10&locations= [`rh8503, `rh8502`rh8504]";
 
     public static void main(String[] args) throws Exception{
 
        //CreateTable(System.getProperty("user.dir")+"/data/createTable_all.java",path_All,"t1");
 
-
+        DBConnection dbConnection = new DBConnection();
+        dbConnection.connect("192.168.1.30",8900);
 
         Object[] o1 = new Object[]{true, 'a', 122, 21, 22, 2.1f, 2.1, "Hello",
                 new BasicDate(LocalDate.parse("2013-06-13")),
@@ -743,6 +744,7 @@ public class Main {
                 for(int i=0, ilen = basicType.length; i<ilen; ++i){
                     Object[] objectArr = new Object[size];
                     for (int j=0; j<size; ++j){
+                        System.out.println(basicType[i].getClass().getName());
                         objectArr[j] = basicType[i];
                     }
                     basicTypeArr[i] = objectArr;
@@ -844,7 +846,7 @@ public class Main {
             conn = DriverManager.getConnection(DB_URL_DFS);
             stmt = conn.prepareStatement("insert into pt values(?,?)");
             //stmt.execute("t1 = table(1 as a, 2 as b, 3 as c, 4 as d)");
-            List<Object> entities = Arrays.asList(new YearMonth[]{YearMonth.parse("2018-06"),YearMonth.parse("2018-06")},new double[]{0.4,0.5});
+            List<Object> entities = Arrays.asList(new YearMonth[]{YearMonth.parse("2000-01"),YearMonth.parse("2000-01")},new double[]{0.4,0.5});
                     //Arrays.asList(YearMonth.parse("2018-06"),0.4);
             int index = 1;
             for(Object entity: entities){
@@ -855,7 +857,7 @@ public class Main {
             int UpdateCount = -1;
             long time = System.currentTimeMillis();
             if(stmt.execute()){
-                rs = stmt.getResultSet();
+                //rs = stmt.getResultSet();
                 //printData(rs);
             }else {
                 UpdateCount =  stmt.getUpdateCount();
@@ -877,6 +879,13 @@ public class Main {
                     }
                 }
             }
+
+            rs = stmt.executeQuery("select * from pt");
+
+            rs.last();
+
+            System.out.println(rs.getRow());
+
             if(rs != null) {
                 rs.close();
             }

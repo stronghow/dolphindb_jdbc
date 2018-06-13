@@ -702,7 +702,7 @@ public class JDBCResultSet implements ResultSet{
         try {
             if(insertRow == row){
                 createArguments();
-                conn.getDbConnection().run("tableInsert",arguments);
+                conn.run("tableInsert",arguments);
                 //insertRun();
                 table = loadTable();
                 rows = table.rows();
@@ -1354,7 +1354,7 @@ public class JDBCResultSet implements ResultSet{
 
     private Entity run(String sql) throws SQLException {
         try {
-            return conn.getDbConnection().run(sql);
+            return conn.run(sql);
         } catch (Exception e) {
             throw new SQLException(e.getMessage());
         }

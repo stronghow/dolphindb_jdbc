@@ -191,12 +191,12 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
 
     @Override
     public int getJDBCMajorVersion() {
-        return 1;
+        return Driver.V;
     }
 
     @Override
     public int getJDBCMinorVersion() {
-        return 0;
+        return Driver.v;
     }
 
     @Override
@@ -372,10 +372,10 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
     @Override
     public ResultSet getTableTypes() throws SQLException{
         try {
-            BasicTable basicTable = (BasicTable) connection.getDbConnection().run(MessageFormat.format("TABLE_TYPE=[\"{0}\"];table(TABLE_TYPE)", "IN-MEMORY TABLE"));
+            BasicTable basicTable = (BasicTable) connection.run(MessageFormat.format("TABLE_TYPE=[\"{0}\"];table(TABLE_TYPE)", "IN-MEMORY TABLE"));
             return new JDBCResultSet(connection,statement,basicTable,"");
         }catch (Exception e){
-            throw new SQLException(e);
+            throw new SQLException(e.getMessage());
         }
     }
 
@@ -445,7 +445,7 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
     public String getStringFunctions() {
         if(STRINGFUNCTIONS == null){
             try {
-                BasicTable table = (BasicTable) connection.getDbConnection().run("defs()");
+                BasicTable table = (BasicTable) connection.run("defs()");
                 StringBuilder sb = new StringBuilder();
                 int rows = table.rows();
                 for(int i=0; i<rows; ++i){

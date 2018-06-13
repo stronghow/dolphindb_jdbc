@@ -1,7 +1,9 @@
 package com.dolphindb.jdbc;
 
 
+import com.xxdb.DBConnection;
 import com.xxdb.data.BasicTable;
+import com.xxdb.data.Entity;
 import com.xxdb.data.Vector;
 
 import java.io.IOException;
@@ -65,19 +67,20 @@ public  class JDBCConnection implements Connection {
             if(values[0].trim().startsWith("\"dfs://")) {
                 isDFS = true;
                 StringBuilder loadTableSb = new StringBuilder();
+                StringBuilder shareTableSb = new StringBuilder();
                 for (int i = 0, len = databases.rows(); i < len; ++i) {
                     String name = databases.get(i).getString();
+//                    loadTableSb.append("share_").append(name).append(" = ").append("loadTable(").append(Driver.DB).append(",`").append(name).append(");\n");
+//                    shareTableSb.append("share ").append("share_").append(name).append(" as ").append(name).append(";\n");
                     loadTableSb.append(name).append(" = ").append("loadTable(").append(Driver.DB).append(",`").append(name).append(");\n");
                 }
-                dbConnection.run(loadTableSb.toString());
+                dbConnection.run(loadTableSb.append(shareTableSb).toString());
             }
 
             if(isDFS) {
-                BasicTable table = ((BasicTable) dbConnection.run("rpc(getControllerAlias(), getClusterChunkNodesStatus)"));
+                BasicTable table = ((BasicTable) dbConnection.run("rpc(\""+controllerAlias+"\", getClusterChunkNodesStatus)"));
                 Vector siteVector = table.getColumn("site");
                 hostName_ports = new LinkedList<>();
-                String this_hostName_port = hostname+":"+port;
-                hostName_ports.add(this_hostName_port);
                 for (int i = 0, len = siteVector.rows(); i < len; i++) {
                     hostName_ports.add(siteVector.get(i).getString());
                 }
@@ -398,50 +401,85 @@ public  class JDBCConnection implements Connection {
     }
 
     private void checkIsClosed() throws SQLException{
-        if(dbConnection == null || dbConnection.isClosed()) throw new SQLException("connection isClosed");
+        if(dbConnection == null) throw new SQLException("connection isClosed");
 
         if(this==null || this.isClosed()) throw new SQLException("connection isClosed");
     }
 
-    private DBConnection getDbConnection(int index, int size) throws SQLException{
-        if(index >= size) throw new SQLException("dataNode all death");
+    //Automatic switching node
+    private DBConnection getDbConnection(int index, int size) throws IOException{
+        System.out.println(index);
+        if(index >= size) throw new IOException("dataNode all death");
+        boolean next = false;
         try {
             for ( ; index<size; ++index){
-                String[] hostName_port = hostName_ports.get(index).split(";");
-                dbConnection = new DBConnection();
-                if(dbConnection.connect(hostName_port[0],Integer.parseInt(hostName_port[1]))){
-                    return dbConnection;
+                String[] hostName_port = hostName_ports.get(index).split(":");
+                System.out.println(hostName_port[0]+":"+hostName_port[1]);
+                this.dbConnection.close();
+                this.dbConnection = new DBConnection();
+                if(this.dbConnection.connect(hostName_port[0],Integer.parseInt(hostName_port[1]))){
+                    next = false;
+                    break;
                 }
             }
         }catch (Exception e){
-
-        }finally {
-            return getDbConnection(++index,size);
+            next = true;
+        }
+        finally {
+            if(index >= size) throw new IOException("dataNode all death");
+            if(next) {
+                return getDbConnection(++index, size);
+            }else {
+                return this.dbConnection;
+            }
         }
     }
 
-    public DBConnection getDbConnection() throws SQLException{
-        if(!isDFS) return this.dbConnection;
+    public Entity run(String function, List<Entity> arguments) throws IOException{
+        if (!isDFS){
+            try {
+                return this.dbConnection.run(function,arguments);
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
         boolean next = false;
         int index=0;
         int size = hostName_ports.size();
+        Entity entity = null;
         try {
-            if(this.dbConnection.isClosed()) {
-                if(this.dbConnection.tryReconnect()){
-                    next = false;
-                }else{
-                    next = true;
-                }
-            }else{
-                next = false;
+            entity =  this.dbConnection.run(function,arguments);
+            next = false;
+        }catch (Exception e){
+            next = true;
+        }
+        finally {
+            if(next) {
+                return getDbConnection(index, size).run(function,arguments);
+            }else {
+                return entity;
             }
-        }catch (IOException e){
+        }
+    }
 
+    public Entity run(String script) throws IOException{
+        if (!isDFS){
+            return this.dbConnection.run(script);
+        }
+        boolean next = false;
+        int index=0;
+        int size = hostName_ports.size();
+        Entity entity = null;
+        try {
+            entity =  this.dbConnection.run(script);
+            next = false;
+        }catch (Exception e){
+            next = true;
         }finally {
             if(next) {
-                return getDbConnection(index, size);
-            }else{
-                return this.dbConnection;
+                return getDbConnection(index, size).run(script);
+            }else {
+                return entity;
             }
         }
     }

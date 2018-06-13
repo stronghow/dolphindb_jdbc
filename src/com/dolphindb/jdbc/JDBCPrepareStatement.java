@@ -215,12 +215,12 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
             if(isInsert){
                 createArguments();
                 if(tableType == null){
-                    tableType = connection.getDbConnection().run("typestr " + tableName).getString();
+                    tableType = connection.run("typestr " + tableName).getString();
                 }
                 BasicInt basicInt;
 
                 if(tableType.equals(IN_MEMORY_TABLE)){
-                    basicInt = (BasicInt) connection.getDbConnection().run("tableInsert",arguments);
+                    basicInt = (BasicInt) connection.run("tableInsert",arguments);
                     objectQueue.offer(basicInt.getInt());
                 }else{
                     int size = arguments.size();
@@ -230,7 +230,7 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
                             List<String> cols = new ArrayList<>();
                             List<Vector> entities = new ArrayList<>(size - 1);
                             if(tableDFS == null){
-                                tableDFS = (BasicTable) connection.getDbConnection().run(tableName);
+                                tableDFS = (BasicTable) connection.run(tableName);
                             }
                             for (int i = 1, len = size; i < len; i++) {
                                 cols.add(tableDFS.getColumnName(i-1));
@@ -243,7 +243,7 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
                             System.out.println(table.getString());
                             newArguments.add(tableDFS);
                             newArguments.add(table);
-                            connection.getDbConnection().run("append!", newArguments);
+                            connection.run("append!", newArguments);
                             objectQueue.offer(insertRows);
 //                            PartitionedTableAppender appender = new PartitionedTableAppender(tableName,connection.getHostName(),connection.getPort());
 //                            appender.append(entities);
@@ -261,11 +261,11 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
                             BasicTable table = new BasicTable(cols, entities);
                             List<Entity> newArguments = new ArrayList<>(2);
                             if(tableDFS == null){
-                                tableDFS = (BasicTable) connection.getDbConnection().run(tableName);
+                                tableDFS = (BasicTable) connection.run(tableName);
                             }
                             newArguments.add(tableDFS);
                             newArguments.add(table);
-                            connection.getDbConnection().run("append!", newArguments);
+                            connection.run("append!", newArguments);
                             objectQueue.offer(insertRows);
                         }
                     }
@@ -283,7 +283,7 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
                 }
             }else if(isUpdate){
                 if(tableType == null){
-                    tableType = connection.getDbConnection().run("typestr " + tableName).getString();
+                    tableType = connection.run("typestr " + tableName).getString();
                 }
                 if(tableType.equals(IN_MEMORY_TABLE)){
                     String s = createSql();
@@ -314,7 +314,7 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
                 return super.execute(s);
             }
         }catch (Exception e){
-            throw new SQLException(e.getMessage());
+            throw new SQLException(e);
         }
     }
 
@@ -524,7 +524,7 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
 
     private void createArguments() throws Exception{
         if(colType == null){
-            BasicDictionary dictionary = (BasicDictionary) connection.getDbConnection().run("schema(" + tableName + ")");
+            BasicDictionary dictionary = (BasicDictionary) connection.run("schema(" + tableName + ")");
             BasicTable tableSchema =(BasicTable) dictionary.get(new BasicString("colDefs"));
             BasicIntVector typeInt = (BasicIntVector) tableSchema.getColumn("typeInt");
             int size = typeInt.rows();

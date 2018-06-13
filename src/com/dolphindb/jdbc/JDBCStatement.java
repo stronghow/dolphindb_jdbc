@@ -40,7 +40,7 @@ public class JDBCStatement implements Statement {
     public ResultSet executeQuery(String sql) throws SQLException {
         checkClosed();
         try {
-            Entity entity = connection.getDbConnection().run(sql);
+            Entity entity = connection.run(sql);
             if(entity instanceof BasicTable){
                 resultSet = new JDBCResultSet(connection, this, entity, sql);
                 return resultSet;
@@ -60,7 +60,7 @@ public class JDBCStatement implements Statement {
             if(sql.startsWith("tableInsert")){
                 return tableInsert(sql).getInt();
             }else{
-                Entity entity = connection.getDbConnection().run(sql);
+                Entity entity = connection.run(sql);
                 if(entity instanceof Void){
                     return 0;
                 }else if(entity instanceof BasicTable){
@@ -163,9 +163,9 @@ public class JDBCStatement implements Statement {
                         objectQueue.offer(tableInsert(item).getInt());
                     }else if(item.startsWith("update")||item.startsWith("delete")){
                         //todo update delete api return row
-                        connection.getDbConnection().run(item);
+                        connection.run(item);
                     }else{
-                        Entity entity = connection.getDbConnection().run(item);
+                        Entity entity = connection.run(item);
                         if(entity instanceof  BasicTable){
                             ResultSet resultSet_ = new JDBCResultSet(connection,this,entity,item);
                             resultSets.offerLast(resultSet_);
@@ -299,9 +299,9 @@ public class JDBCStatement implements Statement {
                         int_list.add(tableInsert(item).getInt());
                     }else if(item.startsWith("update")||item.startsWith("delete")){
                         //todo update delete api return row
-                        connection.getDbConnection().run(item);
+                        connection.run(item);
                     }else{
-                        Entity entity = connection.getDbConnection().run(item);
+                        Entity entity = connection.run(item);
                         if(entity instanceof  BasicTable){
                             int size = int_list.size();
                             int[] arr_int = new int[size];
@@ -442,7 +442,7 @@ public class JDBCStatement implements Statement {
 
     protected BasicInt tableInsert(String sql) throws Exception{
         if(sql.startsWith("tableInsert")){
-            return (BasicInt)connection.getDbConnection().run(sql);
+            return (BasicInt)connection.run(sql);
         }else {
             String tableName = sql.substring(sql.indexOf("into") + "into".length(), sql.indexOf("values"));
             String values;
@@ -454,7 +454,7 @@ public class JDBCStatement implements Statement {
             }
 
             String new_sql = MessageFormat.format("tableInsert({0},{1})", tableName, values);
-            BasicInt n = (BasicInt) connection.getDbConnection().run(new_sql);
+            BasicInt n = (BasicInt) connection.run(new_sql);
             return n;
         }
     }

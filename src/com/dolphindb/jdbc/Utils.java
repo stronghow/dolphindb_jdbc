@@ -74,7 +74,6 @@ public class Utils {
         String[] strings2;
         for (String item : strings1){
             if(item.length()>0) {
-                System.out.println(item);
                 strings2 = item.split(split2);
                 if(strings2.length == 2) {
                     if(strings2[0].length()==0) throw new SQLException(item + "     is error");
