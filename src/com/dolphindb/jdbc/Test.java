@@ -1,9 +1,5 @@
 package com.dolphindb.jdbc;
 
-import com.xxdb.data.BasicDate;
-import com.xxdb.data.BasicNanoTimestamp;
-import com.xxdb.data.Utils;
-
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -68,41 +64,39 @@ public class Test {
 
         System.out.println(strings.getClass().getName());
 
-//        long l = 1000000;
-//
-//        Date date = new Date(l);
-//        Time time = new Time(l);
-//        Timestamp timestamp = new Timestamp(l);
-//        System.out.println(date.toLocalDate());
-//        System.out.println(time.toLocalTime());
-//        System.out.println(timestamp.toLocalDateTime());
+        //Main.TestTypeCast(4);
+        boolean[] booleans = new boolean[]{true};
+        byte[] bytes = new byte[]{(byte)97};
+        char[] chars = new char[]{'a'};
+        short[] shorts = new short[]{(short)1};
+        int[] ints = new int[]{1};
+        long[] longs = new long[]{1l};
+        float[] floats = new float[]{1.0f};
+        double[] doubles = new double[]{1.0};
+        String[] strings1 = new String[]{"1"};
 
-        BasicDate basicDate = new BasicDate(LocalDate.parse("2013-06-14"));
-        BasicNanoTimestamp basicNanoTimestamp = new BasicNanoTimestamp(Utils.parseNanoTimestamp(TypeCast.L+basicDate.getInt()));
-        LocalDate localDate = basicDate.getDate();
-        //LocalDateTime localDateTime = LocalDateTime.of(localDate.getYear(),localDate.getMonthValue(),localDate.getDayOfMonth(),0,0,0);
-        System.out.println(basicDate.getInt());
-        LocalDateTime localDateTime = LocalDateTime.of(1988,1,1,0,0,0,1);
-        System.out.println(localDateTime.getYear());
-        long l = Utils.countMilliseconds(LocalDateTime.of(1970,1,1,1,0,0,1));
-        System.out.println(l);
-        System.out.println(basicNanoTimestamp.getString());
+        System.out.println(booleans instanceof boolean[]);
 
-//        LocalDateTime dateTime = LocalDateTime.now();
-//        String[] strings1 = new String[]{TypeCast.YEAR_MONTH,TypeCast.LOCAL_TIME,TypeCast.LOCAL_DATE,TypeCast.LOCAL_DATETIME};
-//        Temporal[] temporals = new Temporal[strings1.length];
-//        int index =0;
-//        for(String s:strings1){
-//            temporals[index] = TypeCast.castTemporal(dateTime,s);
-//            System.out.println(temporals[index]);
-//            ++index;
-//        }
-//        for(int i=0,ilen =strings1.length;i<ilen; ++i){
-//            System.out.println(strings1[i]);
-//            for (int j=0,jlen =strings1.length;j<jlen; ++j){
-//                System.out.println(strings1[j]);
-//                System.out.println(TypeCast.castTemporal(temporals[i],strings1[j]));
-//            }
-//        }
+        System.out.println(boolean[].class.getName());
+        System.out.println(byte[].class.getName());
+        System.out.println(char[].class.getName());
+        System.out.println(short[].class.getName());
+        System.out.println(int[].class.getName());
+        System.out.println(long[].class.getName());
+        System.out.println(float[].class.getName());
+        System.out.println(double[].class.getName());
+
+        System.out.println(Boolean[].class.getName());
+        System.out.println(Byte[].class.getName());
+        System.out.println(Character[].class.getName());
+        System.out.println(Short[].class.getName());
+        System.out.println(Integer[].class.getName());
+        System.out.println(Long[].class.getName());
+        System.out.println(Float[].class.getName());
+        System.out.println(Double[].class.getName());
+        System.out.println(String[].class.getName());
+
+        System.out.println(strings1 instanceof Object[]);
+
     }
 }

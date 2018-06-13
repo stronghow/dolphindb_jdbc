@@ -97,6 +97,17 @@ public class TypeCast {
     public static final String STRING = "java.lang.String";
 
 
+    public static final String BOOLEANARR = "[Z";
+    public static final String BYTEARR = "[B";
+    public static final String CHARARR = "[C";
+    public static final String SHORTARR = "[S";
+    public static final String INTARR = "[I";
+    public static final String LONGARR = "[J";
+    public static final String FLOATARR = "[F";
+    public static final String DOUBLEARR = "[D";
+
+
+
     public static final HashMap<Integer,String> TYPEINT2STRING = new LinkedHashMap<>();
 
 
@@ -181,6 +192,7 @@ public class TypeCast {
 
 
         if(srcValue instanceof Object[]){
+            System.out.println("here");
             castEntity = basicTypeArr2Vector(srcValue,targetEntityClassName);
             if (castEntity != null) return castEntity;
         }
@@ -510,6 +522,15 @@ public class TypeCast {
             case FLOAT:
             case DOUBLE:
             case STRING:
+            case BOOLEANARR:
+            case BYTEARR:
+            case CHARARR:
+            case SHORTARR:
+            case INTARR:
+            case LONGARR:
+            case FLOATARR:
+            case DOUBLEARR:
+
                 switch (targetEntityClassName){
                     case BASIC_BOOLEAN:
                     case BASIC_BYTE:
@@ -553,10 +574,10 @@ public class TypeCast {
                     case BASIC_FLOAT:
                     case BASIC_DOUBLE:
                     case BASIC_STRING:
-                        Vector targetVector = new BasicBooleanVector(size);
+                        BasicBooleanVector targetVector = new BasicBooleanVector(size);
                         int index = 0;
-                        for(boolean item : (boolean[]) srcValue){
-                            ((BasicBooleanVector) targetVector).setBoolean(index,item);
+                        for(boolean item : (Boolean[]) srcValue){
+                            targetVector.setBoolean(index,item);
                             ++index;
                         }
                         return targetVector;
@@ -574,7 +595,12 @@ public class TypeCast {
                     case BASIC_FLOAT:
                     case BASIC_DOUBLE:
                     case BASIC_STRING:
-                        Vector targetVector = new BasicByteVector((byte[]) srcValue);
+                        BasicByteVector targetVector = new BasicByteVector(size);
+                        int index = 0;
+                        for(byte item : (Byte[]) srcValue){
+                            targetVector.setByte(index,item);
+                            ++index;
+                        }
                         return targetVector;
                     default:
                         throw new SQLException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
@@ -589,10 +615,10 @@ public class TypeCast {
                     case BASIC_FLOAT:
                     case BASIC_DOUBLE:
                     case BASIC_STRING:
-                        Vector targetVector = new BasicByteVector(size);
+                        BasicByteVector targetVector = new BasicByteVector(size);
                         int index = 0;
-                        for(char item : (char[]) srcValue){
-                            ((BasicByteVector) targetVector).setByte(index,(byte) (item & 0XFF));
+                        for(char item : (Character[]) srcValue){
+                            targetVector.setByte(index,(byte) (item & 0XFF));
                             ++index;
                         }
                         return targetVector;
@@ -609,7 +635,12 @@ public class TypeCast {
                     case BASIC_FLOAT:
                     case BASIC_DOUBLE:
                     case BASIC_STRING:
-                        Vector targetVector = new BasicIntVector((int[]) srcValue);
+                        BasicIntVector targetVector = new BasicIntVector(size);
+                        int index = 0;
+                        for(int item : (Integer[]) srcValue){
+                            targetVector.setInt(index,item);
+                            ++index;
+                        }
                         return targetVector;
                     default:
                         throw new SQLException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
@@ -624,7 +655,12 @@ public class TypeCast {
                     case BASIC_FLOAT:
                     case BASIC_DOUBLE:
                     case BASIC_STRING:
-                        Vector targetVector = new BasicShortVector((short[]) srcValue);
+                        BasicShortVector targetVector = new BasicShortVector(size);
+                        int index = 0;
+                        for(short item : (Short[]) srcValue){
+                            targetVector.setShort(index,item);
+                            ++index;
+                        }
                         return targetVector;
                     default:
                         throw new SQLException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
@@ -639,7 +675,12 @@ public class TypeCast {
                     case BASIC_FLOAT:
                     case BASIC_DOUBLE:
                     case BASIC_STRING:
-                        Vector targetVector = new BasicLongVector((long[]) srcValue);
+                        BasicLongVector targetVector = new BasicLongVector(size);
+                        int index = 0;
+                        for(long item : (Long[]) srcValue){
+                            targetVector.setLong(index,item);
+                            ++index;
+                        }
                         return targetVector;
                     default:
                         throw new SQLException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
@@ -654,7 +695,12 @@ public class TypeCast {
                     case BASIC_FLOAT:
                     case BASIC_DOUBLE:
                     case BASIC_STRING:
-                        Vector targetVector = new BasicFloatVector((float[]) srcValue);
+                        BasicFloatVector targetVector = new BasicFloatVector(size);
+                        int index = 0;
+                        for(float item : (Float[]) srcValue){
+                            targetVector.setFloat(index,item);
+                            ++index;
+                        }
                         return targetVector;
                     default:
                         throw new SQLException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
@@ -669,7 +715,12 @@ public class TypeCast {
                     case BASIC_FLOAT:
                     case BASIC_DOUBLE:
                     case BASIC_STRING:
-                        Vector targetVector = new BasicDoubleVector((double[]) srcValue);
+                        BasicDoubleVector targetVector = new BasicDoubleVector(size);
+                        int index = 0;
+                        for(double item : (Double[]) srcValue){
+                            targetVector.setDouble(index,item);
+                            ++index;
+                        }
                         return targetVector;
                     default:
                         throw new SQLException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
@@ -925,6 +976,146 @@ public class TypeCast {
                     default:
                         throw new SQLException(srcValueClassName + " can not cast to " + targetEntityClassName);
                 }
+            case BOOLEANARR:
+                switch (targetEntityClassName){
+                    case BASIC_BOOLEAN:
+                    case BASIC_BYTE:
+                    case BASIC_INT:
+                    case BASIC_SHORT:
+                    case BASIC_LONG:
+                    case BASIC_FLOAT:
+                    case BASIC_DOUBLE:
+                    case BASIC_STRING:
+                        boolean[] booleans = (boolean[]) srcValue;
+                        BasicBooleanVector targetVector = new BasicBooleanVector(booleans.length);
+                        int index = 0;
+                        for(boolean item : booleans){
+                            targetVector.setBoolean(index,item);
+                            ++index;
+                        }
+                        return targetVector;
+                    default:
+                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                }
+
+            case BYTEARR:
+                switch (targetEntityClassName){
+                    case BASIC_BOOLEAN:
+                    case BASIC_BYTE:
+                    case BASIC_INT:
+                    case BASIC_SHORT:
+                    case BASIC_LONG:
+                    case BASIC_FLOAT:
+                    case BASIC_DOUBLE:
+                    case BASIC_STRING:
+                        BasicByteVector targetVector = new BasicByteVector((byte[])srcValue);
+                        return targetVector;
+                    default:
+                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                }
+
+            case CHARARR:
+                switch (targetEntityClassName){
+                    case BASIC_BOOLEAN:
+                    case BASIC_BYTE:
+                    case BASIC_INT:
+                    case BASIC_SHORT:
+                    case BASIC_LONG:
+                    case BASIC_FLOAT:
+                    case BASIC_DOUBLE:
+                    case BASIC_STRING:
+                        char[] chars = (char[]) srcValue;
+                        BasicByteVector targetVector = new BasicByteVector(chars.length);
+                        int index = 0;
+                        for(char item : chars){
+                            targetVector.setByte(index,(byte)(item & 0xFF));
+                            ++index;
+                        }
+                        return targetVector;
+                    default:
+                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                }
+
+            case SHORTARR:
+                switch (targetEntityClassName){
+                    case BASIC_BOOLEAN:
+                    case BASIC_BYTE:
+                    case BASIC_INT:
+                    case BASIC_SHORT:
+                    case BASIC_LONG:
+                    case BASIC_FLOAT:
+                    case BASIC_DOUBLE:
+                    case BASIC_STRING:
+                        BasicShortVector targetVector = new BasicShortVector((short[])srcValue);
+                        return targetVector;
+                    default:
+                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                }
+
+            case INTARR:
+                switch (targetEntityClassName){
+                    case BASIC_BOOLEAN:
+                    case BASIC_BYTE:
+                    case BASIC_INT:
+                    case BASIC_SHORT:
+                    case BASIC_LONG:
+                    case BASIC_FLOAT:
+                    case BASIC_DOUBLE:
+                    case BASIC_STRING:
+                        BasicIntVector targetVector = new BasicIntVector((int[])srcValue);
+                        return targetVector;
+                    default:
+                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                }
+
+            case LONGARR:
+                switch (targetEntityClassName){
+                    case BASIC_BOOLEAN:
+                    case BASIC_BYTE:
+                    case BASIC_INT:
+                    case BASIC_SHORT:
+                    case BASIC_LONG:
+                    case BASIC_FLOAT:
+                    case BASIC_DOUBLE:
+                    case BASIC_STRING:
+                        BasicLongVector targetVector = new BasicLongVector((long[])srcValue);
+                        return targetVector;
+                    default:
+                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                }
+
+            case FLOATARR:
+                switch (targetEntityClassName){
+                    case BASIC_BOOLEAN:
+                    case BASIC_BYTE:
+                    case BASIC_INT:
+                    case BASIC_SHORT:
+                    case BASIC_LONG:
+                    case BASIC_FLOAT:
+                    case BASIC_DOUBLE:
+                    case BASIC_STRING:
+                        BasicFloatVector targetVector = new BasicFloatVector((float[])srcValue);
+                        return targetVector;
+                    default:
+                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                }
+
+            case DOUBLEARR:
+                switch (targetEntityClassName){
+                    case BASIC_BOOLEAN:
+                    case BASIC_BYTE:
+                    case BASIC_INT:
+                    case BASIC_SHORT:
+                    case BASIC_LONG:
+                    case BASIC_FLOAT:
+                    case BASIC_DOUBLE:
+                    case BASIC_STRING:
+                        BasicDoubleVector targetVector = new BasicDoubleVector((double[])srcValue);
+                        return targetVector;
+                    default:
+                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                }
+
             default:
                 return null;
         }

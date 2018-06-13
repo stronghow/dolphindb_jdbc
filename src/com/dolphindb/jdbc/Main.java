@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -26,13 +27,13 @@ public class Main {
 
     private static final String DB_URL1 = "jdbc:dolphindb://";
 
-    private static final String DB_URL_DFS = "jdbc:dolphindb://localhost:8499?databasePath=dfs://valuedb&partitionType=VALUE&partitionScheme=2000.01M..2016.12M";
+    private static final String DB_URL_DFS = "jdbc:dolphindb://localhost:8499?databasePath=dfs://testdb3&partitionType=VALUE&partitionScheme=2000.01M..2016.12M";
 
     private static final String DB_URL_DFS1 = "jdbc:dolphindb://localhost:8499?databasePath=dfs://rangedb&partitionType=RANGE&partitionScheme= 0 5 10&locations= [`rh8503, `rh8502`rh8504]";
 
     public static void main(String[] args) throws Exception{
 
-       CreateTable(System.getProperty("user.dir")+"/data/createTable_all.java",path_All,"t1");
+       //CreateTable(System.getProperty("user.dir")+"/data/createTable_all.java",path_All,"t1");
 
 
 
@@ -133,7 +134,7 @@ public class Main {
 //
 //
 //        TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,false);
-        TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,true);
+//        TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,true);
 //
 //        TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select bool,char from ej(t1, t1, `bool)",new Object[]{true,'a'},true);
 //
@@ -165,7 +166,7 @@ public class Main {
 //        TestDatabaseMetaData(DB_URL1,"");
 
         //TestPreparedStatementInsert();
-
+        TestPreparedStatement();
 
     }
 
@@ -561,7 +562,7 @@ public class Main {
         try{
             Class.forName(JDBC_DRIVER);
             conn = DriverManager.getConnection(DB_URL1);
-            stmt = conn.prepareStatement("tableInsert(t1,?,?,?,?)");
+            stmt = conn.prepareStatement("insert into t1 values(?,?,?,?)");
             stmt.execute("t1 = table(1 as a, 2 as b, 3 as c, 4 as d)");
             int index = 1;
             for(Entity entity: entities){
@@ -573,7 +574,7 @@ public class Main {
             long time = System.currentTimeMillis();
             if(stmt.execute()){
                 rs = stmt.getResultSet();
-                printData(rs);
+                //printData(rs);
             }else {
                 UpdateCount =  stmt.getUpdateCount();
                 if(UpdateCount != -1) {
@@ -584,7 +585,7 @@ public class Main {
             while (true){
                 if(stmt.getMoreResults()){
                     rs =  stmt.getResultSet();
-                    printData(rs);
+                    //printData(rs);
                 }else{
                     UpdateCount =  stmt.getUpdateCount();
                     if(UpdateCount != -1) {
@@ -601,7 +602,7 @@ public class Main {
 
             rs.last();
 
-            System.out.println("this ==> " +rs.getRow());
+            System.out.println(rs.getRow());
 
             rs.moveToInsertRow();
             for(int i =1; i<= 4; ++i){
@@ -635,8 +636,43 @@ public class Main {
         System.out.println("TestPreparedStatement end");
     }
 
-    public static void TestTypeCast(){
+    public static void TestTypeCast(int type) throws Exception{
         System.out.println("TestTypeCast begin");
+
+        Object[] basicType = new Object[]{
+                true,(byte)97,'A',(short)1,1,1l,1.0f,1.0,
+                new BasicBoolean(true),
+                new BasicByte((byte)97),
+                new BasicShort((short) 1),
+                new BasicInt(1),
+                new BasicLong(1l),
+                new BasicFloat(1.0f),
+                new BasicDouble(1.0),
+                "Hello",
+                new BasicString("Hello")
+        };
+
+        Scalar[] basicTypeScalar = new Scalar[]{
+                new BasicBoolean(true),
+                new BasicByte((byte)97),
+                new BasicShort((short) 1),
+                new BasicInt(1),
+                new BasicLong(1l),
+                new BasicFloat(1.0f),
+                new BasicDouble(1.0),
+                new BasicString("Hello")
+        };
+
+        Entity[] targetBasicTypeEntities = new Entity[]{
+                new BasicBoolean(true),
+                new BasicByte((byte)97),
+                new BasicShort((short) 1),
+                new BasicInt(1),
+                new BasicLong(1l),
+                new BasicFloat(1.0f),
+                new BasicDouble(1.0),
+                new BasicString("Hello")};
+
         Object[] dateTime = new Object[]{
                 Date.valueOf("2013-06-14"),
                 Time.valueOf("13:30:10"),
@@ -655,20 +691,17 @@ public class Main {
                 new BasicNanoTime(LocalTime.parse("13:30:10.008007007")),
                 new BasicNanoTimestamp(LocalDateTime.parse("2012-06-13T13:30:10.008007007"))};
 
-        Object[] dateTimeList = new Object[dateTime.length];
-        Object[] dateTimeArr = new Object[dateTime.length];
-        int size = 3;
-
-        for(int i=0, ilen = dateTime.length; i<ilen; ++i){
-            List<Object> objectList = new ArrayList<>();
-            Object[] objectArr = new Object[size];
-            for (int j=0; j<size; ++j){
-                objectList.add(dateTime[i]);
-                objectArr[j] = dateTime[i];
-            }
-            dateTimeList[i] = objectList;
-            dateTimeArr[i] = objectArr;
-        }
+        Scalar[] dateTimeScalar = new Scalar[]{
+                new BasicDate(LocalDate.parse("2013-06-14")),
+                new BasicMonth(YearMonth.parse("2016-07")),
+                new BasicTime(LocalTime.parse("13:30:10.009")),
+                new BasicMinute(LocalTime.parse("13:31:10")),
+                new BasicSecond(LocalTime.parse("13:30:11")),
+                new BasicDateTime(LocalDateTime.parse("2012-06-13T13:30:11")),
+                new BasicTimestamp(LocalDateTime.parse("2012-06-13T13:30:10.009")),
+                new BasicNanoTime(LocalTime.parse("13:30:10.008007007")),
+                new BasicNanoTimestamp(LocalDateTime.parse("2012-06-13T13:30:10.008007007"))
+        };
 
 
         Entity[] targetDateTimeEntities = new Entity[]{
@@ -682,15 +715,106 @@ public class Main {
                 new BasicNanoTime(LocalTime.parse("13:30:10.008007007")),
                 new BasicNanoTimestamp(LocalDateTime.parse("2012-06-13T13:30:10.008007007"))};
 
-        Object[] objects = dateTimeArr;
+
+        int size = 3;
+
+
+        Object[] objects;
+        Entity[] entities;
+        switch (type){
+            case 0:
+                objects = basicType;
+                entities = targetBasicTypeEntities;
+                break;
+            case 1:
+                Object[] basicTypeVector = new Object[basicTypeScalar.length];
+                for(int i=0, ilen = basicTypeScalar.length; i<ilen; ++i){
+                    BasicAnyVector basicAnyVector = new BasicAnyVector(size);
+                    for (int j=0; j<size; ++j){
+                        basicAnyVector.set(j,basicTypeScalar[i]);
+                    }
+                    basicTypeVector[i] = basicAnyVector;
+                }
+                objects = basicTypeVector;
+                entities = targetBasicTypeEntities;
+                break;
+            case 2:
+                Object[] basicTypeArr = new Object[basicType.length];
+                for(int i=0, ilen = basicType.length; i<ilen; ++i){
+                    Object[] objectArr = new Object[size];
+                    for (int j=0; j<size; ++j){
+                        objectArr[j] = basicType[i];
+                    }
+                    basicTypeArr[i] = objectArr;
+                }
+                objects = basicTypeArr;
+                entities = targetBasicTypeEntities;
+                break;
+            case 3:
+                Object[] basicTypeList = new Object[basicType.length];
+                for(int i=0, ilen = basicType.length; i<ilen; ++i){
+                    List<Object> objectList = new ArrayList<>();
+                    for (int j=0; j<size; ++j){
+                        objectList.add(basicType[i]);
+                    }
+                    basicTypeList[i] = objectList;
+                }
+                objects = basicTypeList;
+                entities = targetBasicTypeEntities;
+                break;
+            case 4:
+                objects = dateTime;
+                entities = targetDateTimeEntities;
+                break;
+            case 5:
+                Object[] dataTimeVector = new Object[dateTimeScalar.length];
+                for(int i=0, ilen = dateTimeScalar.length; i<ilen; ++i){
+                    BasicAnyVector basicAnyVector = new BasicAnyVector(size);
+                    for (int j=0; j<size; ++j){
+                        basicAnyVector.set(j,dateTimeScalar[i]);
+                    }
+                    dataTimeVector[i] = basicAnyVector;
+                }
+                objects = dataTimeVector;
+                entities = targetDateTimeEntities;
+                break;
+            case 6:
+                Object[] dateTimeArr = new Object[dateTime.length];
+                for(int i=0, ilen = dateTime.length; i<ilen; ++i){
+                    Object[] objectArr = new Object[size];
+                    for (int j=0; j<size; ++j){
+                        objectArr[j] = dateTime[i];
+                    }
+                    dateTimeArr[i] = objectArr;
+                }
+                objects = dateTimeArr;
+                entities = targetDateTimeEntities;
+                break;
+            case 7:
+                Object[] dateTimeList = new Object[dateTime.length];
+                for(int i=0, ilen = dateTime.length; i<ilen; ++i){
+                    List<Object> objectList = new ArrayList<>();
+                    for (int j=0; j<size; ++j){
+                        objectList.add(dateTime[i]);
+                    }
+                    dateTimeList[i] = objectList;
+                }
+                objects = dateTimeList;
+                entities = targetDateTimeEntities;
+                break;
+            default:
+                objects = dateTime;
+                entities = targetDateTimeEntities;
+                break;
+        }
 
         try {
             for(int i=0, ilen = objects.length; i<ilen; ++i){
                 String srcValueClassName = objects[i].getClass().getName();
-                for (int j=0, jlen = targetDateTimeEntities.length; j<jlen; ++j){
-                    String targetEntityClassName = targetDateTimeEntities[j].getClass().getName();
+                for (int j=0, jlen = entities.length; j<jlen; ++j){
+                    String targetEntityClassName = entities[j].getClass().getName();
                     System.out.println(srcValueClassName + "(" + objects[i] + ")" + " ==> " + targetEntityClassName);
-                    Entity entity = TypeCast.java2db(objects[i],targetDateTimeEntities[j]);
+                    Entity entity = TypeCast.java2db(objects[i],targetEntityClassName);
                     System.out.println(entity.getClass().getName() + " ==> " + entity.getString());
                 }
             }
@@ -699,5 +823,79 @@ public class Main {
         }
 
         System.out.println("TestTypeCast end");
+    }
+
+    public static void TestPreparedStatement() throws Exception{
+        System.out.println("TestPreparedStatement begin");
+
+        Connection conn = null;
+        PreparedStatement stmt = null;
+
+//        DBConnection dbConnection = new DBConnection();
+//        dbConnection.connect("127.0.0.1",8848);
+//        BasicIntVector entity1 = (BasicIntVector)dbConnection.run("1..10000000");
+//        List<Entity> entities = new ArrayList<>(5);
+//        for(int i =0; i< 4; i++){
+//            entities.add(entity1);
+//        }
+
+        try{
+            Class.forName(JDBC_DRIVER);
+            conn = DriverManager.getConnection(DB_URL_DFS);
+            stmt = conn.prepareStatement("insert into pt values(?,?)");
+            //stmt.execute("t1 = table(1 as a, 2 as b, 3 as c, 4 as d)");
+            List<Object> entities = Arrays.asList(new YearMonth[]{YearMonth.parse("2018-06"),YearMonth.parse("2018-06")},new double[]{0.4,0.5});
+                    //Arrays.asList(YearMonth.parse("2018-06"),0.4);
+            int index = 1;
+            for(Object entity: entities){
+                stmt.setObject(index,entity);
+                ++index;
+            }
+            ResultSet rs = null;
+            int UpdateCount = -1;
+            long time = System.currentTimeMillis();
+            if(stmt.execute()){
+                rs = stmt.getResultSet();
+                //printData(rs);
+            }else {
+                UpdateCount =  stmt.getUpdateCount();
+                if(UpdateCount != -1) {
+                    System.out.println(UpdateCount + " row affected");
+                }
+            }
+            System.out.println(System.currentTimeMillis() - time + "ms");
+            while (true){
+                if(stmt.getMoreResults()){
+                    rs =  stmt.getResultSet();
+                    //printData(rs);
+                }else{
+                    UpdateCount =  stmt.getUpdateCount();
+                    if(UpdateCount != -1) {
+                        System.out.println(UpdateCount + "row affected");
+                    }else{
+                        break;
+                    }
+                }
+            }
+            if(rs != null) {
+                rs.close();
+            }
+
+            stmt.close();
+            conn.close();
+        }catch(Exception e){
+            e.printStackTrace();
+        }finally{
+            try{
+                if(stmt!=null) stmt.close();
+            }catch(SQLException se2){
+            }
+            try{
+                if(conn!=null) conn.close();
+            }catch(SQLException se){
+                se.printStackTrace();
+            }
+        }
+        System.out.println("TestPreparedStatement end");
     }
 }
