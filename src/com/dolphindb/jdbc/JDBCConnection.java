@@ -1,14 +1,13 @@
 package com.dolphindb.jdbc;
 
-import com.xxdb.DBConnection;
+
+import com.xxdb.data.BasicTable;
 import com.xxdb.data.Vector;
 
 import java.io.IOException;
 import java.sql.*;
 import java.text.MessageFormat;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.Executor;
 
 public  class JDBCConnection implements Connection {
@@ -21,6 +20,8 @@ public  class JDBCConnection implements Connection {
     private HashMap<String,Boolean> loadTable;
     private String url;
     private DatabaseMetaData metaData;
+    private List<String> hostName_ports;
+    private boolean isDFS;
 
 
     public JDBCConnection(String url,Properties prop) throws SQLException{
@@ -54,8 +55,15 @@ public  class JDBCConnection implements Connection {
             Utils.joinOrder(sb,values,",");
             sb.append(");\n");
             sb.append("getTables(").append(Driver.DB).append(")");
-            databases = (com.xxdb.data.Vector) dbConnection.run(sb.toString());
+            databases = (Vector) dbConnection.run(sb.toString());
+            String controllerAlias = dbConnection.run("getControllerAlias()").getString();
+            if(controllerAlias == null || controllerAlias.length() == 0){
+                isDFS = false;
+            }else{
+                isDFS = true;
+            }
             if(values[0].trim().startsWith("\"dfs://")) {
+                isDFS = true;
                 StringBuilder loadTableSb = new StringBuilder();
                 for (int i = 0, len = databases.rows(); i < len; ++i) {
                     String name = databases.get(i).getString();
@@ -63,6 +71,18 @@ public  class JDBCConnection implements Connection {
                 }
                 dbConnection.run(loadTableSb.toString());
             }
+
+            if(isDFS) {
+                BasicTable table = ((BasicTable) dbConnection.run("rpc(getControllerAlias(), getClusterChunkNodesStatus)"));
+                Vector siteVector = table.getColumn("site");
+                hostName_ports = new LinkedList<>();
+                String this_hostName_port = hostname+":"+port;
+                hostName_ports.add(this_hostName_port);
+                for (int i = 0, len = siteVector.rows(); i < len; i++) {
+                    hostName_ports.add(siteVector.get(i).getString());
+                }
+            }
+
             //loadTable = new HashMap<>(databases.rows());
         }
     }
@@ -378,16 +398,63 @@ public  class JDBCConnection implements Connection {
     }
 
     private void checkIsClosed() throws SQLException{
-        if(dbConnection ==null) throw new SQLException("dbConnection is null");
+        if(dbConnection == null || dbConnection.isClosed()) throw new SQLException("connection isClosed");
 
         if(this==null || this.isClosed()) throw new SQLException("connection isClosed");
     }
 
-    public DBConnection getDbConnection() {
-        return dbConnection;
+    private DBConnection getDbConnection(int index, int size) throws SQLException{
+        if(index >= size) throw new SQLException("dataNode all death");
+        try {
+            for ( ; index<size; ++index){
+                String[] hostName_port = hostName_ports.get(index).split(";");
+                dbConnection = new DBConnection();
+                if(dbConnection.connect(hostName_port[0],Integer.parseInt(hostName_port[1]))){
+                    return dbConnection;
+                }
+            }
+        }catch (Exception e){
+
+        }finally {
+            return getDbConnection(++index,size);
+        }
+    }
+
+    public DBConnection getDbConnection() throws SQLException{
+        if(!isDFS) return this.dbConnection;
+        boolean next = false;
+        int index=0;
+        int size = hostName_ports.size();
+        try {
+            if(this.dbConnection.isClosed()) {
+                if(this.dbConnection.tryReconnect()){
+                    next = false;
+                }else{
+                    next = true;
+                }
+            }else{
+                next = false;
+            }
+        }catch (IOException e){
+
+        }finally {
+            if(next) {
+                return getDbConnection(index, size);
+            }else{
+                return this.dbConnection;
+            }
+        }
     }
 
     public String getUrl() {
         return url;
+    }
+
+    public String getHostName() {
+        return hostName;
+    }
+
+    public int getPort() {
+        return port;
     }
 }

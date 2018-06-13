@@ -48,7 +48,6 @@ public class JDBCStatement implements Statement {
                 throw new SQLException("the given SQL statement produces anything other than a single ResultSet object");
             }
         }catch (IOException e){
-            e.printStackTrace();
             throw new SQLException(e.getMessage());
         }
     }
@@ -72,7 +71,7 @@ public class JDBCStatement implements Statement {
                 }
             }
         }catch (Exception e){
-            throw new SQLException(e);
+            throw new SQLException(e.getMessage());
         }
     }
 
@@ -186,8 +185,7 @@ public class JDBCStatement implements Statement {
                 }
             }
         }catch (Exception e){
-            e.printStackTrace();
-            throw new SQLException(e);
+            throw new SQLException(e.getMessage());
         }
     }
 
@@ -322,7 +320,7 @@ public class JDBCStatement implements Statement {
             }
             return arr_int;
         }catch (Exception e){
-            throw new SQLException(e);
+            throw new SQLException(e.getMessage());
         }
     }
 
@@ -355,7 +353,7 @@ public class JDBCStatement implements Statement {
                 default:
                 throw new SQLException("the argument supplied is not one of the following:\n" +
                         "Statement.CLOSE_CURRENT_RESULT,\n" +
-                        "Statement.KEEP_CURRENT_RESULTor\n" +
+                        "Statement.KEEP_CURRENT_RESULT or\n" +
                         " Statement.CLOSE_ALL_RESULTS");
         }
         return false;

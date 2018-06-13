@@ -711,7 +711,7 @@ public class JDBCResultSet implements ResultSet{
             insertRowMap.clear();
             isInsert = false;
         }catch (Exception e){
-            throw new SQLException(e);
+            throw new SQLException(e.getMessage());
         }
 
     }
@@ -751,7 +751,7 @@ public class JDBCResultSet implements ResultSet{
                 table.getColumn(i).set(row,newTable.getColumn(i).get(row));
             }
         }catch (Exception e){
-            throw new SQLException(e);
+            throw new SQLException(e.getMessage());
         }
 
     }
@@ -1314,7 +1314,7 @@ public class JDBCResultSet implements ResultSet{
             Entity targetEntity = table.getColumn(adjustColumnIndex(columnIndex)).get(row);
             insertRowMap.put(columnIndex, TypeCast.java2db(value,targetEntity.getClass().getName()));
         }catch (Exception e){
-            throw new SQLException(e);
+            throw new SQLException(e.getMessage());
         }
 
     }
@@ -1356,7 +1356,7 @@ public class JDBCResultSet implements ResultSet{
         try {
             return conn.getDbConnection().run(sql);
         } catch (Exception e) {
-            throw new SQLException(e);
+            throw new SQLException(e.getMessage());
         }
     }
 

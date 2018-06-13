@@ -61,6 +61,7 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
         }
 
         if(tableName != null){
+            tableName = tableName.trim();
             tableNameArg = new BasicString(tableName);
         }
 
@@ -228,19 +229,25 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
                             int insertRows = arguments.get(1).rows();
                             List<String> cols = new ArrayList<>();
                             List<Vector> entities = new ArrayList<>(size - 1);
-                            for (int i = 1, len = size; i < len; i++) {
-                                cols.add("" + i);
-                                entities.add((Vector) arguments.get(i));
-                            }
-                            BasicTable table = new BasicTable(cols, entities);
-                            List<Entity> newArguments = new ArrayList<>(2);
                             if(tableDFS == null){
                                 tableDFS = (BasicTable) connection.getDbConnection().run(tableName);
                             }
+                            for (int i = 1, len = size; i < len; i++) {
+                                cols.add(tableDFS.getColumnName(i-1));
+                                entities.add((Vector)arguments.get(i));
+                            }
+                            BasicTable table = new BasicTable(cols, entities);
+                            List<Entity> newArguments = new ArrayList<>(2);
+
+                            System.out.println(tableDFS.getString());
+                            System.out.println(table.getString());
                             newArguments.add(tableDFS);
                             newArguments.add(table);
                             connection.getDbConnection().run("append!", newArguments);
                             objectQueue.offer(insertRows);
+//                            PartitionedTableAppender appender = new PartitionedTableAppender(tableName,connection.getHostName(),connection.getPort());
+//                            appender.append(entities);
+
                         }else{
                             int insertRows = 1;
                             List<String> cols = new ArrayList<>();
@@ -307,7 +314,7 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
                 return super.execute(s);
             }
         }catch (Exception e){
-            throw new SQLException(e);
+            throw new SQLException(e.getMessage());
         }
     }
 
@@ -530,7 +537,6 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
         arguments.add(tableNameArg);
         for(int i = 1; i< sqlSplit.length; ++i){
             String s = TypeCast.TYPEINT2STRING.get(colType.get(i));
-            System.out.println(s);
             arguments.add(TypeCast.java2db(values[i],s));
         }
     }
