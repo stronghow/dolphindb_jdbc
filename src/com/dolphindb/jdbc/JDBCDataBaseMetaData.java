@@ -6,7 +6,6 @@ import com.xxdb.data.BasicTable;
 import com.xxdb.data.Vector;
 
 import java.sql.*;
-import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.List;
 
@@ -372,7 +371,11 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
     @Override
     public ResultSet getTableTypes() throws SQLException{
         try {
-            BasicTable basicTable = (BasicTable) connection.run(MessageFormat.format("TABLE_TYPE=[\"{0}\"];table(TABLE_TYPE)", "IN-MEMORY TABLE"));
+            String[] tableTypes = new String[]{"IN-MEMORY TABLE","SEGMENTED TABLE"};
+            BasicStringVector basicStringVector = new BasicStringVector(tableTypes);
+            List<String> colNames = Arrays.asList("TABLE_TYPE");
+            List<Vector> cols = Arrays.asList(basicStringVector);
+            BasicTable basicTable = new BasicTable(colNames,cols);
             return new JDBCResultSet(connection,statement,basicTable,"");
         }catch (Exception e){
             throw new SQLException(e.getMessage());
