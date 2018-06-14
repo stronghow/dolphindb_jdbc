@@ -95,15 +95,37 @@ public class Utils {
         return properties;
     }
 
-    public static String getTableName(String s){
-        String s1 = s.trim().split(";")[0];
-
-        int index = s1.indexOf("from");
-        if(index != -1){
-            return s1.substring(index+4).trim().split(" ")[0];
+    public static boolean isInsert(String sql){
+        if(sql.startsWith("insert") || sql.startsWith("tableInsert")){
+            return true;
         }else{
-            return s1;
+            return false;
         }
+    }
+
+    public static String getTableName(String sql){
+        String tableName = null;
+        if(sql.startsWith("insert")){
+            tableName = sql.substring(sql.indexOf("into") + "into".length(), sql.indexOf("values"));
+        }else if(sql.startsWith("tableInsert")){
+            tableName = sql.substring(sql.indexOf("(") + "(".length(), sql.indexOf(","));
+        }else if(sql.startsWith("append!")){
+            tableName = sql.substring(sql.indexOf("(") + "(".length(), sql.indexOf(","));
+        }else if(sql.contains(".append!")){
+            tableName = sql.split("\\.")[0];
+        }else if(sql.startsWith("update")){
+            tableName = sql.substring(sql.indexOf("update") + "update".length(), sql.indexOf("set"));
+        }else if(sql.contains(".update!")){
+            tableName = sql.split("\\.")[0];
+        }else if(sql.startsWith("delete")){
+            int index = sql.indexOf("where");
+            if(index != -1) {
+                tableName = sql.substring(sql.indexOf("from") + "from".length(), sql.indexOf("where"));
+            }else{
+                tableName = sql.substring(sql.indexOf("from") + "from".length()).replaceAll(";","");
+            }
+        }
+        return tableName;
     }
 
     public static boolean isUpdateable(String s){

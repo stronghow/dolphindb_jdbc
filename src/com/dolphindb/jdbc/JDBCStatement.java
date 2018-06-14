@@ -1,8 +1,6 @@
 package com.dolphindb.jdbc;
 
-import com.xxdb.data.BasicInt;
-import com.xxdb.data.BasicTable;
-import com.xxdb.data.Entity;
+import com.xxdb.data.*;
 import com.xxdb.data.Void;
 
 import java.io.IOException;
@@ -15,6 +13,9 @@ public class JDBCStatement implements Statement {
     protected JDBCConnection connection;
 
     protected ResultSet resultSet;
+
+    protected String tableName;
+    protected boolean isInsert;
 
     protected String sql;
     protected String[] sqlSplit;
@@ -55,11 +56,18 @@ public class JDBCStatement implements Statement {
     @Override
     public int executeUpdate(String sql) throws SQLException {
         checkClosed();
+        sql = sql.trim();
+        String tableName = Utils.getTableName(sql);
         try {
-            sql = sql.trim();
-            if(sql.startsWith("tableInsert")){
+            if(sql.startsWith("insert") || sql.startsWith("tableInsert")){
                 return tableInsert(sql).getInt();
             }else{
+                if(tableName != null) {
+                    String tableType = connection.run("typestr " + tableName).getString();
+                    if(!tableType.equals(IN_MEMORY_TABLE)){
+                        throw new SQLException("only local in-memory table can update");
+                    }
+                }
                 Entity entity = connection.run(sql);
                 if(entity instanceof Void){
                     return 0;
@@ -162,6 +170,13 @@ public class JDBCStatement implements Statement {
                     if(item.startsWith("insert") || item.startsWith("tableInsert")){
                         objectQueue.offer(tableInsert(item).getInt());
                     }else if(item.startsWith("update")||item.startsWith("delete")){
+                        String tableName = Utils.getTableName(sql);
+                        if(tableName != null) {
+                            String tableType = connection.run("typestr " + tableName).getString();
+                            if(!tableType.equals(IN_MEMORY_TABLE)){
+                                throw new SQLException("only local in-memory table can update");
+                            }
+                        }
                         //todo update delete api return row
                         connection.run(item);
                     }else{
@@ -298,8 +313,16 @@ public class JDBCStatement implements Statement {
                     if(item.startsWith("insert") || item.startsWith("tableInsert")){
                         int_list.add(tableInsert(item).getInt());
                     }else if(item.startsWith("update")||item.startsWith("delete")){
+                        String tableName = Utils.getTableName(item);
+                        if(tableName != null) {
+                            String tableType = connection.run("typestr " + tableName).getString();
+                            if(!tableType.equals(IN_MEMORY_TABLE)){
+                                throw new SQLException("only local in-memory table can update");
+                            }
+                        }
                         //todo update delete api return row
                         connection.run(item);
+                        int_list.add(SUCCESS_NO_INFO);
                     }else{
                         Entity entity = connection.run(item);
                         if(entity instanceof  BasicTable){
@@ -308,6 +331,7 @@ public class JDBCStatement implements Statement {
                             for(int i=0; i<size; ++i){
                                 arr_int[i] = int_list.get(i);
                             }
+                            batch = new StringBuilder();
                             throw new BatchUpdateException("can not return ResultSet",arr_int);
                         }
                     }
@@ -318,8 +342,10 @@ public class JDBCStatement implements Statement {
             for(int i=0; i<size; ++i){
                 arr_int[i] = int_list.get(i);
             }
+            batch = new StringBuilder();
             return arr_int;
         }catch (Exception e){
+            batch = new StringBuilder();
             throw new SQLException(e.getMessage());
         }
     }
