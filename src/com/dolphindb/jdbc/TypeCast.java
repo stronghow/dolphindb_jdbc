@@ -2,8 +2,8 @@ package com.dolphindb.jdbc;
 
 import com.xxdb.data.*;
 
+import java.io.IOException;
 import java.sql.Date;
-import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.LocalDate;
@@ -140,17 +140,23 @@ public class TypeCast {
 
 
 
-    public static Entity java2db(Object srcValue, String targetEntityClassName) throws Exception{
+    public static Entity java2db(Object srcValue, String targetEntityClassName) throws IOException {
         String srcValueClassName = srcValue.getClass().getName();
         Entity castEntity = null;
         if(srcValueClassName.equals(targetEntityClassName) || srcValueClassName.startsWith(targetEntityClassName)){
             return (Entity) srcValue;
         }
-        castEntity = dateTimeCast(srcValue,targetEntityClassName);
+
+        try {
+            castEntity = dateTimeCast(srcValue,targetEntityClassName);
+        }catch (Exception e){
+            throw new IOException("only support bool byte char short int long float double Date Time Timestamp YearMoth LocalDate LocalTime LocalDateTime Scalar Vector");
+        }
+
         if(castEntity != null) return castEntity;
         castEntity = basicTypeCast(srcValue,targetEntityClassName);
         if(castEntity != null) return castEntity;
-        throw new SQLException("only support bool byte char short int long float double Date Time Timestamp YearMoth LocalDate LocalTime LocalDateTime Scalar Vector");
+        throw new IOException("only support bool byte char short int long float double Date Time Timestamp YearMoth LocalDate LocalTime LocalDateTime Scalar Vector");
     }
 
     public static Entity dateTimeCast(Object srcValue, String targetEntityClassName) throws Exception{
@@ -174,7 +180,7 @@ public class TypeCast {
         return null;
     }
 
-    public static Entity basicTypeCast(Object srcValue, String targetEntityClassName) throws SQLException{
+    public static Entity basicTypeCast(Object srcValue, String targetEntityClassName) throws IOException{
         Entity castEntity;
 
         if(srcValue instanceof Scalar || srcValue instanceof Vector) {
@@ -199,7 +205,7 @@ public class TypeCast {
         return null;
     }
 
-    public static Entity dataTime_java2db(Object srcValue, String targetEntityClassName) throws SQLException{
+    public static Entity dataTime_java2db(Object srcValue, String targetEntityClassName) throws IOException{
         if(srcValue instanceof Entity) return null;
 
         String srcEntityClassName = srcValue.getClass().getName();
@@ -237,7 +243,7 @@ public class TypeCast {
         return Temporal2dateTime(temporal,srcEntityClassName,targetEntityClassName);
     }
 
-    public static boolean CheckedDateTime(String srcEntityClassName, String targetEntityClassName) throws SQLException{
+    public static boolean CheckedDateTime(String srcEntityClassName, String targetEntityClassName) throws IOException{
         switch (srcEntityClassName){
             case BASIC_MONTH:
             case BASIC_DATE:
@@ -277,14 +283,14 @@ public class TypeCast {
                     case BASIC_NANOTIMESTAMP:
                         return true;
                     default:
-                        throw new SQLException(srcEntityClassName + " can not cast " + targetEntityClassName);
+                        throw new IOException(srcEntityClassName + " can not cast " + targetEntityClassName);
                 }
             default:
                 return false;
         }
     }
 
-    public static Entity Tempos2dateTime(Object srcTempos, String srcEntityClassName, String targetEntityClassName) throws SQLException{
+    public static Entity Tempos2dateTime(Object srcTempos, String srcEntityClassName, String targetEntityClassName) throws IOException{
         Object[] objects = (Object[]) srcTempos;
         int size = objects.length;
         switch (targetEntityClassName) {
@@ -370,11 +376,11 @@ public class TypeCast {
                 return targetVector;
             }
             default:
-                throw new SQLException(srcEntityClassName + " can not cast " + targetEntityClassName);
+                throw new IOException(srcEntityClassName + " can not cast " + targetEntityClassName);
         }
     }
 
-    public static Entity Temporal2dateTime(Temporal srcTemporal, String srcEntityClassName, String targetEntityClassName) throws SQLException{
+    public static Entity Temporal2dateTime(Temporal srcTemporal, String srcEntityClassName, String targetEntityClassName) throws IOException{
         switch (targetEntityClassName) {
             case BASIC_MONTH:
                 return new BasicMonth((YearMonth) castTemporal(srcTemporal,YEAR_MONTH));
@@ -395,7 +401,7 @@ public class TypeCast {
             case BASIC_NANOTIMESTAMP:
                 return new BasicNanoTimestamp((LocalDateTime) castTemporal(srcTemporal,LOCAL_DATETIME));
             default:
-                throw new SQLException(srcEntityClassName + " can not cast " + targetEntityClassName);
+                throw new IOException(srcEntityClassName + " can not cast " + targetEntityClassName);
         }
     }
 
@@ -418,12 +424,13 @@ public class TypeCast {
                 case BASIC_NANOTIMESTAMP:
                     srcTemporal = ((Scalar)srcEntity).getTemporal();
                     return Temporal2dateTime(srcTemporal, srcEntityClassName, targetEntityClassName);
+
                 default:
-                    throw new SQLException(srcEntityClassName + " can not cast " + targetEntityClassName);
+                    throw new IOException(srcEntityClassName + " can not cast " + targetEntityClassName);
 
             }
         }else if (srcEntity.isVector()){
-            if(srcEntity.rows() == 0) throw new SQLException("Vector rows can not 0");
+            if(srcEntity.rows() == 0) throw new IOException("Vector rows can not 0");
             srcEntityClassName = srcEntity.getClass().getName();
             String srcScalarFromVectorClassName = ((Vector) srcEntity).get(0).getClass().getName();
             if(!CheckedDateTime(srcScalarFromVectorClassName,targetEntityClassName))
@@ -443,6 +450,7 @@ public class TypeCast {
                     srcTempos = new Temporal[size];
                     for (int i = 0; i < size; ++i) {
                         srcTempos[i] = ((Vector) srcEntity).get(i).getTemporal();
+
                     }
                     return Tempos2dateTime(srcTempos, srcEntityClassName, targetEntityClassName);
                 }
@@ -467,34 +475,34 @@ public class TypeCast {
                             }
                             return Tempos2dateTime(srcTempos, srcScalarFromVectorClassName, targetEntityClassName);
                         default:
-                            throw new SQLException(srcScalarFromVectorClassName + " can not cast " + targetEntityClassName);
+                            throw new IOException(srcScalarFromVectorClassName + " can not cast " + targetEntityClassName);
                     }
                 }
                 default:
                     return null;
             }
         }else {
-            throw new SQLException(srcEntity.getClass().getName() + " can not cast " +srcEntityClassName);
+            throw new IOException(srcEntity.getClass().getName() + " can not cast " +srcEntityClassName);
         }
 
     }
 
-    public static Entity dateTimeArr2Vector(Object srcValue,String targetEntityClassName) throws SQLException{
+    public static Entity dateTimeArr2Vector(Object srcValue,String targetEntityClassName) throws IOException{
         Object[] srcArr = (Object[])srcValue;
         int size = srcArr.length;
         if(size == 0){
-            throw new SQLException(srcArr + "size can not 0 ");
+            throw new IOException(srcArr + "size can not 0 ");
         }
         Object srcValueFromArr = srcArr[0];
         String srcValueFromListClassName = srcValueFromArr.getClass().getName();
         if(srcValueFromArr instanceof Scalar){
-            throw new SQLException("you need use com.xxdb.data.Vector load com.xxdb.data.Scalar");
+            throw new IOException("you need use com.xxdb.data.Vector load com.xxdb.data.Scalar");
         }
         if(!CheckedDateTime(srcValueFromListClassName,targetEntityClassName)) return null;
         return Tempos2dateTime(srcArr,srcValueFromListClassName,targetEntityClassName);
     }
 
-    public static boolean CheckedBasicType(String srcEntityClassName, String targetEntityClassName) throws SQLException{
+    public static boolean CheckedBasicType(String srcEntityClassName, String targetEntityClassName) throws IOException{
         switch (srcEntityClassName){
             case BASIC_BOOLEAN:
             case BASIC_BYTE:
@@ -542,23 +550,23 @@ public class TypeCast {
                     case BASIC_STRING:
                         return true;
                     default:
-                        throw new SQLException(srcEntityClassName + " can not cast " + targetEntityClassName);
+                        throw new IOException(srcEntityClassName + " can not cast " + targetEntityClassName);
                 }
             default:
                 return false;
         }
     }
 
-    public static Entity basicTypeArr2Vector(Object srcValue,String targetEntityClassName) throws SQLException{
+    public static Entity basicTypeArr2Vector(Object srcValue,String targetEntityClassName) throws IOException{
         Object[] srcArr = (Object[])srcValue;
         int size = srcArr.length;
         if(size == 0){
-            throw new SQLException(srcArr + "size can not 0 ");
+            throw new IOException(srcArr + "size can not 0 ");
         }
         Object srcValueFromArr = srcArr[0];
         String srcValueFromListClassName = srcValueFromArr.getClass().getName();
         if(srcValueFromArr instanceof Scalar){
-            throw new SQLException("you need use com.xxdb.data.Vector load com.xxdb.data.Scalar");
+            throw new IOException("you need use com.xxdb.data.Vector load com.xxdb.data.Scalar");
         }
         if(!CheckedBasicType(srcValueFromListClassName,targetEntityClassName)) return null;
 
@@ -582,7 +590,7 @@ public class TypeCast {
                         }
                         return targetVector;
                     default:
-                        throw new SQLException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
+                        throw new IOException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
 
                 }
             case BYTE:
@@ -603,7 +611,7 @@ public class TypeCast {
                         }
                         return targetVector;
                     default:
-                        throw new SQLException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
+                        throw new IOException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
                 }
             case CHAR:
                 switch (targetEntityClassName){
@@ -623,7 +631,7 @@ public class TypeCast {
                         }
                         return targetVector;
                     default:
-                        throw new SQLException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
+                        throw new IOException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
                 }
             case INT:
                 switch (targetEntityClassName){
@@ -643,7 +651,7 @@ public class TypeCast {
                         }
                         return targetVector;
                     default:
-                        throw new SQLException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
+                        throw new IOException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
                 }
             case SHORT:
                 switch (targetEntityClassName){
@@ -663,7 +671,7 @@ public class TypeCast {
                         }
                         return targetVector;
                     default:
-                        throw new SQLException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
+                        throw new IOException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
                 }
             case LONG:
                 switch (targetEntityClassName){
@@ -683,7 +691,7 @@ public class TypeCast {
                         }
                         return targetVector;
                     default:
-                        throw new SQLException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
+                        throw new IOException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
                 }
             case FLOAT:
                 switch (targetEntityClassName){
@@ -703,7 +711,7 @@ public class TypeCast {
                         }
                         return targetVector;
                     default:
-                        throw new SQLException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
+                        throw new IOException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
                 }
             case DOUBLE:
                 switch (targetEntityClassName){
@@ -723,7 +731,7 @@ public class TypeCast {
                         }
                         return targetVector;
                     default:
-                        throw new SQLException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
+                        throw new IOException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
                 }
             case STRING:
                 switch (targetEntityClassName){
@@ -731,7 +739,7 @@ public class TypeCast {
                         Vector targetVector = new BasicStringVector((String[]) srcValue);
                         return targetVector;
                     default:
-                        throw new SQLException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
+                        throw new IOException(srcValueFromListClassName + " can not cast to " + targetEntityClassName);
                 }
             default:
                 return null;
@@ -739,7 +747,7 @@ public class TypeCast {
     }
 
 
-    public static Entity basicType_db2db(Entity srcEntity, String targetEntityClassName) throws SQLException{
+    public static Entity basicType_db2db(Entity srcEntity, String targetEntityClassName) throws IOException{
         String srcEntityClassName = null;
         if(srcEntity.isScalar()){
             srcEntityClassName = srcEntity.getClass().getName();
@@ -764,20 +772,20 @@ public class TypeCast {
                         case BASIC_STRING:
                             return srcEntity;
                         default:
-                            throw new SQLException(srcEntityClassName + " can not cast " + targetEntityClassName);
+                            throw new IOException(srcEntityClassName + " can not cast " + targetEntityClassName);
                     }
                 case BASIC_STRING:
                     switch (targetEntityClassName){
                         case BASIC_STRING:
                             return srcEntity;
                         default:
-                            throw new SQLException(srcEntityClassName + " can not cast to " + targetEntityClassName);
+                            throw new IOException(srcEntityClassName + " can not cast to " + targetEntityClassName);
                     }
                 default:
                     return null;
             }
         }else if (srcEntity.isVector()) {
-            if (srcEntity.rows() == 0) throw new SQLException("Vector rows can not 0");
+            if (srcEntity.rows() == 0) throw new IOException("Vector rows can not 0");
             srcEntityClassName = srcEntity.getClass().getName();
             String srcScalarFromVectorClassName = ((Vector) srcEntity).get(0).getClass().getName();
             if (!CheckedBasicType(srcEntityClassName, targetEntityClassName))
@@ -801,14 +809,14 @@ public class TypeCast {
                         case BASIC_STRING:
                             return srcEntity;
                         default:
-                            throw new SQLException(srcEntityClassName + " can not cast " + targetEntityClassName);
+                            throw new IOException(srcEntityClassName + " can not cast " + targetEntityClassName);
                     }
                 case BASIC_STRING_VECTOR:
                     switch (targetEntityClassName){
                         case BASIC_STRING:
                             return srcEntity;
                         default:
-                            throw new SQLException(srcEntityClassName + " can not cast to " + targetEntityClassName);
+                            throw new IOException(srcEntityClassName + " can not cast to " + targetEntityClassName);
                     }
                 case BASIC_ANY_VECTOR:
                     switch (srcScalarFromVectorClassName){
@@ -830,26 +838,26 @@ public class TypeCast {
                                 case BASIC_STRING:
                                     return srcEntity;
                                 default:
-                                    throw new SQLException(srcScalarFromVectorClassName + " can not cast " + targetEntityClassName);
+                                    throw new IOException(srcScalarFromVectorClassName + " can not cast " + targetEntityClassName);
                             }
                         case BASIC_STRING:
                             switch (targetEntityClassName){
                                 case BASIC_STRING:
                                     return srcEntity;
                                 default:
-                                    throw new SQLException(srcScalarFromVectorClassName + " can not cast to " + targetEntityClassName);
+                                    throw new IOException(srcScalarFromVectorClassName + " can not cast to " + targetEntityClassName);
                             }
                         default:
                             return null;
                     }
             }
         }else{
-            throw new SQLException(srcEntity.getClass().getName() + " can not cast " +srcEntityClassName);
+            throw new IOException(srcEntity.getClass().getName() + " can not cast " +srcEntityClassName);
         }
         return null;
     }
 
-    public static Entity basicType_java2db(Object srcValue, String targetEntityClassName) throws SQLException{
+    public static Entity basicType_java2db(Object srcValue, String targetEntityClassName) throws IOException{
         if(srcValue instanceof Entity) return null;
 
         String srcValueClassName = srcValue.getClass().getName();
@@ -869,7 +877,7 @@ public class TypeCast {
                     case BASIC_STRING:
                         return new BasicBoolean((boolean) srcValue);
                     default:
-                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                        throw new IOException(srcValueClassName + " can not cast  " + targetEntityClassName);
                 }
             case BYTE:
                 switch (targetEntityClassName) {
@@ -883,7 +891,7 @@ public class TypeCast {
                     case BASIC_STRING:
                         return new BasicByte((byte) srcValue);
                     default:
-                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                        throw new IOException(srcValueClassName + " can not cast  " + targetEntityClassName);
                 }
             case CHAR:
                 switch (targetEntityClassName) {
@@ -897,7 +905,7 @@ public class TypeCast {
                     case BASIC_STRING:
                         return new BasicByte((byte) ((char) srcValue & 0xFF));
                     default:
-                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                        throw new IOException(srcValueClassName + " can not cast  " + targetEntityClassName);
                 }
             case INT:
                 switch (targetEntityClassName) {
@@ -911,7 +919,7 @@ public class TypeCast {
                     case BASIC_STRING:
                         return new BasicInt((int) srcValue);
                     default:
-                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                        throw new IOException(srcValueClassName + " can not cast  " + targetEntityClassName);
                 }
             case SHORT:
                 switch (targetEntityClassName) {
@@ -925,7 +933,7 @@ public class TypeCast {
                     case BASIC_STRING:
                         return new BasicShort((short) srcValue);
                     default:
-                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                        throw new IOException(srcValueClassName + " can not cast  " + targetEntityClassName);
                 }
             case LONG:
                 switch (targetEntityClassName) {
@@ -939,7 +947,7 @@ public class TypeCast {
                     case BASIC_STRING:
                         return new BasicLong((long) srcValue);
                     default:
-                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                        throw new IOException(srcValueClassName + " can not cast  " + targetEntityClassName);
                 }
             case FLOAT:
                 switch (targetEntityClassName) {
@@ -953,7 +961,7 @@ public class TypeCast {
                     case BASIC_STRING:
                         return new BasicFloat((float) srcValue);
                     default:
-                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                        throw new IOException(srcValueClassName + " can not cast  " + targetEntityClassName);
                 }
             case DOUBLE:
                 switch (targetEntityClassName) {
@@ -967,14 +975,14 @@ public class TypeCast {
                     case BASIC_STRING:
                         return new BasicDouble((double) srcValue);
                     default:
-                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                        throw new IOException(srcValueClassName + " can not cast  " + targetEntityClassName);
                 }
             case STRING:
                 switch (targetEntityClassName) {
                     case BASIC_STRING:
                         return new BasicString((String) srcValue);
                     default:
-                        throw new SQLException(srcValueClassName + " can not cast to " + targetEntityClassName);
+                        throw new IOException(srcValueClassName + " can not cast to " + targetEntityClassName);
                 }
             case BOOLEANARR:
                 switch (targetEntityClassName){
@@ -995,7 +1003,7 @@ public class TypeCast {
                         }
                         return targetVector;
                     default:
-                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                        throw new IOException(srcValueClassName + " can not cast  " + targetEntityClassName);
                 }
 
             case BYTEARR:
@@ -1011,7 +1019,7 @@ public class TypeCast {
                         BasicByteVector targetVector = new BasicByteVector((byte[])srcValue);
                         return targetVector;
                     default:
-                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                        throw new IOException(srcValueClassName + " can not cast  " + targetEntityClassName);
                 }
 
             case CHARARR:
@@ -1033,7 +1041,7 @@ public class TypeCast {
                         }
                         return targetVector;
                     default:
-                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                        throw new IOException(srcValueClassName + " can not cast  " + targetEntityClassName);
                 }
 
             case SHORTARR:
@@ -1049,7 +1057,7 @@ public class TypeCast {
                         BasicShortVector targetVector = new BasicShortVector((short[])srcValue);
                         return targetVector;
                     default:
-                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                        throw new IOException(srcValueClassName + " can not cast  " + targetEntityClassName);
                 }
 
             case INTARR:
@@ -1065,7 +1073,7 @@ public class TypeCast {
                         BasicIntVector targetVector = new BasicIntVector((int[])srcValue);
                         return targetVector;
                     default:
-                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                        throw new IOException(srcValueClassName + " can not cast  " + targetEntityClassName);
                 }
 
             case LONGARR:
@@ -1081,7 +1089,7 @@ public class TypeCast {
                         BasicLongVector targetVector = new BasicLongVector((long[])srcValue);
                         return targetVector;
                     default:
-                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                        throw new IOException(srcValueClassName + " can not cast  " + targetEntityClassName);
                 }
 
             case FLOATARR:
@@ -1097,7 +1105,7 @@ public class TypeCast {
                         BasicFloatVector targetVector = new BasicFloatVector((float[])srcValue);
                         return targetVector;
                     default:
-                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                        throw new IOException(srcValueClassName + " can not cast  " + targetEntityClassName);
                 }
 
             case DOUBLEARR:
@@ -1113,7 +1121,7 @@ public class TypeCast {
                         BasicDoubleVector targetVector = new BasicDoubleVector((double[])srcValue);
                         return targetVector;
                     default:
-                        throw new SQLException(srcValueClassName + " can not cast  " + targetEntityClassName);
+                        throw new IOException(srcValueClassName + " can not cast  " + targetEntityClassName);
                 }
 
             default:
