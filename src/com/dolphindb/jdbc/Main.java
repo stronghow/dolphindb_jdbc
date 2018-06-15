@@ -27,7 +27,7 @@ public class Main {
 
     private static final String DB_URL1 = "jdbc:dolphindb://";
 
-    private static final String DB_URL_DFS = "jdbc:dolphindb://192.168.1.30:8900?databasePath=dfs://valuedb&partitionType=VALUE&partitionScheme=2000.01M..2016.12M";
+    private static final String DB_URL_DFS = "jdbc:dolphindb://192.168.1.30:8501?databasePath=dfs://valuedb&partitionType=VALUE&partitionScheme=2000.01M..2016.12M";
 
     private static final String DB_URL_DFS1 = "jdbc:dolphindb://192.168.1.30:8900?databasePath=dfs://rangedb&partitionType=RANGE&partitionScheme= 0 5 10&locations= [`rh8503, `rh8502`rh8504]";
 
@@ -35,8 +35,6 @@ public class Main {
 
        //CreateTable(System.getProperty("user.dir")+"/data/createTable_all.java",path_All,"t1");
 
-        DBConnection dbConnection = new DBConnection();
-        dbConnection.connect("192.168.1.30",8900);
 
         Object[] o1 = new Object[]{true, 'a', 122, 21, 22, 2.1f, 2.1, "Hello",
                 new BasicDate(LocalDate.parse("2013-06-13")),
@@ -131,43 +129,75 @@ public class Main {
         }
 
 
-//        TestPreparedStatement(DB_URL,"t1 = loadTable(system_db,`t1)","insert into t1 values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",o4);
-//
-//
-//        TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,false);
-//        TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,true);
-//
-//        TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select bool,char from ej(t1, t1, `bool)",new Object[]{true,'a'},true);
-//
-//        TestResultSetUpdate(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,false);
-//        TestResultSetUpdate(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,true);
-//
-//        TestResultSetDelete(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",2,false);
-//        TestResultSetDelete(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",2,true);
+        //TestPreparedStatement(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1","insert into t1 values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",o4);
 
-//        TestPreparedStatementBatch(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1","insert into t1 values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",o3);
-//
-//
-//
-//        TestResultSetInsert(DB_URL_DFS,"pt = loadTable(system_db,`pt)","select top 10 * from pt",new Object[]{new BASIC_MONTH(YearMonth.parse("2016-07")),0.007},true);
-//
-//        TestResultSetUpdate(DB_URL_DFS,"pt = loadTable(system_db,`pt)","select top 10 * from pt",new Object[]{new BASIC_MONTH(YearMonth.parse("2016-07")),0.007},true);
-//
-//        TestResultSetDelete(DB_URL_DFS,"pt = loadTable(system_db,`pt)","select top 10 * from pt",1,true);
-//
-//
+        //TestPreparedStatement(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1","update t1 set bool = ? where char = ?",new Object[]{false, 'a'});
+
+        //TestPreparedStatement(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1","delete from t1 where char = ?",new Object[]{'a'});
+
+        //TestPreparedStatement(DB_URL_DFS,null,"select top 2 * from pt","insert into pt values(?, ?)",new Object[]{new YearMonth[]{YearMonth.parse("2000-01"),YearMonth.parse("2000-01")},new double[]{0.4,0.5}});
+
+        //TestPreparedStatement(DB_URL_DFS,null,"select top 2 * from pt","update pt set x = ? where month = ?",new Object[]{0.5, YearMonth.parse("2000-01")});
+
+        //TestPreparedStatement(DB_URL_DFS,null,"select top 2 * from pt","delete from pt where x = ?",new Object[]{YearMonth.parse("2000-01")});
+
+
+        TestPreparedStatementInsert();
+
+//        DBConnection dbConnection = new DBConnection();
+//        dbConnection.connect("127.0.0.1",8848);
+//        dbConnection.run("t1 = table(1 as a, 1 as b, 1 as c, 1 as d, 1 as f)");
+//        BasicInt basicInt = new BasicInt(1);
+//        List<Entity> arguments = Arrays.asList(new BasicString("t1"), basicInt, basicInt, basicInt, basicInt,basicInt);
+//        long time = System.currentTimeMillis();
+//        for(int i = 0; i<1000000; ++i){
+//            dbConnection.run("tableInsert",arguments);
+//            //dbConnection.run("tableInsert",arguments);
+//        }
+//        System.out.println(System.currentTimeMillis() - time +"ms");
+
+
+        //TestAutomaticSwitchingNode();
+
+
+        //TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,false);
+        //TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,true);
+
+        //TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select bool,char from ej(t1, t1, `bool)",new Object[]{true,'a'},true);
+
+        //TestResultSetUpdate(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,false);
+        //TestResultSetUpdate(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,true);
+
+        //TestResultSetDelete(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",2,false);
+        //TestResultSetDelete(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",2,true);
+
+        //TestPreparedStatementBatch(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1","insert into t1 values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",o3);
+
+
+
+        //TestResultSetInsert(DB_URL_DFS,"pt = loadTable(system_db,`pt)","select top 10 * from pt",new Object[]{new BasicMonth(YearMonth.parse("2016-07")),0.007},true);
+
+        //TestResultSetUpdate(DB_URL_DFS,"pt = loadTable(system_db,`pt)","select top 10 * from pt",new Object[]{new BasicMonth(YearMonth.parse("2016-07")),0.007},true);
+
+        //TestResultSetDelete(DB_URL_DFS,"pt = loadTable(system_db,`pt)","select top 10 * from pt",1,true);
+
+
+
+
 //        String sql = "bool = [true, false];\n" +
 //                "int = [1, 2];\n" +
 //                "t1 = table(bool, int);\n" +
 //                "insert into t1 values (bool, int);\n";
-//        TestResultSetUpdate(DB_URL,sql,"select * from t1",new Object[]{true, 3},true);
-//
-//        TestStatementExecute(DB_URL_DFS1,"select  top 10 * from pt");
+        //TestResultSetUpdate(DB_URL,sql,"select * from t1",new Object[]{true, 3},true);
 
-//        TestDatabaseMetaData(DB_URL1,"");
+        //TestStatementExecute(DB_URL_DFS1,"select  top 10 * from pt");
 
-        //TestPreparedStatementInsert();
-        TestPreparedStatement();
+        //TestDatabaseMetaData(DB_URL1,"");
+
+
+        //TestPreparedStatement();
+
+        //TestDatabaseMetaData(DB_URL1,"");
 
     }
 
@@ -249,7 +279,7 @@ public class Main {
     }
 
 
-    public static void TestPreparedStatement(String url,String loadTable,String preSql, Object[] objects) throws Exception{
+    public static void TestPreparedStatement(String url,String loadTable,String select, String preSql, Object[] objects) throws Exception{
         System.out.println("TestStatement begin");
 
         Connection conn = null;
@@ -258,13 +288,19 @@ public class Main {
             Class.forName(JDBC_DRIVER);
             conn = DriverManager.getConnection(url);
             stmt = conn.prepareStatement(preSql);
-            stmt.execute(loadTable);
+            if(loadTable != null && loadTable.length() > 0) {
+                stmt.execute(loadTable);
+            }
+            ResultSet rs = null;
+            rs = stmt.executeQuery(select);
+            printData(rs);
+            if (rs != null)
+                rs.close();
             int index = 1;
             for(Object o: objects){
                 stmt.setObject(index,o);
                 ++index;
             }
-            ResultSet rs = null;
             int UpdateCount = -1;
             if(stmt.execute()){
                 rs = stmt.getResultSet();
@@ -291,6 +327,10 @@ public class Main {
             if(rs != null) {
                 rs.close();
             }
+            rs = stmt.executeQuery(select);
+            printData(rs);
+            if(rs != null)
+                rs.close();
             stmt.close();
             conn.close();
         }catch(Exception e){
@@ -443,7 +483,6 @@ public class Main {
         Connection conn = null;
         Statement stmt = null;
         try{
-
             Class.forName(JDBC_DRIVER);
             conn = DriverManager.getConnection(url);
             stmt = conn.createStatement();
@@ -552,27 +591,84 @@ public class Main {
         Connection conn = null;
         PreparedStatement stmt = null;
 
-        DBConnection dbConnection = new DBConnection();
-        dbConnection.connect("127.0.0.1",8848);
-        BasicIntVector entity1 = (BasicIntVector)dbConnection.run("1..10000000");
-        List<Entity> entities = new ArrayList<>(5);
-        for(int i =0; i< 4; i++){
-            entities.add(entity1);
+        int size = 100000;
+
+        byte[] bytes = new byte[size];
+        int[] ints = new int[size];
+        byte b = (byte)97;
+        for (int i = 0; i < size; ++i){
+            bytes[i] = b;
+            ints[i] = i;
         }
+
+        BasicByteVector basicByteVector = new BasicByteVector(bytes);
+        BasicIntVector basicIntVector = new BasicIntVector(ints);
+
+        List<Entity> entities = Arrays.asList(basicIntVector,basicByteVector);
 
         try{
             Class.forName(JDBC_DRIVER);
             conn = DriverManager.getConnection(DB_URL1);
-            stmt = conn.prepareStatement("insert into t1 values(?,?,?,?)");
-            stmt.execute("t1 = table(1 as a, 2 as b, 3 as c, 4 as d)");
-            int index = 1;
-            for(Entity entity: entities){
-                stmt.setObject(index,entity);
-                ++index;
+            stmt = conn.prepareStatement("insert into t1 values(?,?,?,?,?)");
+            stmt.execute("t1 = table(1 as a, 1 as b, 1 as c, 1 as d, 1 as f)");
+//            long time = System.currentTimeMillis();
+//            BasicByte basicByte = new BasicByte((byte)97);
+//            for(int i = 0; i<1000000; ++i){
+//                //stmt.setObject(1,i);
+//                stmt.setObject(1,basicByte);
+//                stmt.execute();
+//            }
+//            System.out.println(System.currentTimeMillis() - time + "ms");
+
+//            int index = 1;
+//            for(Entity entity: entities){
+//                stmt.setObject(index,entity);
+//                ++index;
+//            }
+
+            Thread t1 = new MyThread(stmt,0,100000-1);
+            Thread t2 = new MyThread(stmt,100000,200000-1);
+            Thread t3 = new MyThread(stmt,200000,300000-1);
+            Thread t4 = new MyThread(stmt,300000,400000-1);
+            Thread t5 = new MyThread(stmt,400000,500000-1);
+            Thread t6 = new MyThread(stmt,500000,600000-1);
+            Thread t7 = new MyThread(stmt,600000,700000-1);
+            Thread t8 = new MyThread(stmt,700000,800000-1);
+            Thread t9 = new MyThread(stmt,800000,900000-1);
+            Thread t10 = new MyThread(stmt,900000,1000000-1);
+
+            long time = System.currentTimeMillis();
+            t1.start();
+            t2.start();
+            t3.start();
+            t4.start();
+            t5.start();
+            t6.start();
+            t7.start();
+            t8.start();
+            t9.start();
+            t10.start();
+
+            try {
+                t1.join();
+                t2.join();
+                t3.join();
+                t4.join();
+                t5.join();
+                t6.join();
+                t7.join();
+                t8.join();
+                t9.join();
+                t10.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
+
+            System.out.println(System.currentTimeMillis() - time + "ms");
+
             ResultSet rs = null;
             int UpdateCount = -1;
-            long time = System.currentTimeMillis();
+            time = System.currentTimeMillis();
             if(stmt.execute()){
                 rs = stmt.getResultSet();
                 //printData(rs);
@@ -600,22 +696,11 @@ public class Main {
                 rs.close();
             }
             rs = stmt.executeQuery("select * from t1");
-
             rs.last();
-
             System.out.println(rs.getRow());
+//            rs.beforeFirst();
+//            printData(rs);
 
-            rs.moveToInsertRow();
-            for(int i =1; i<= 4; ++i){
-                rs.updateObject(i,entities.get(i-1));
-            }
-            time = System.currentTimeMillis();
-            rs.insertRow();
-            System.out.println(System.currentTimeMillis()-time+"ms");
-            rs.last();
-
-            System.out.println("that ==> " +rs.getRow());
-            //printData(rs);
             if(rs != null) {
                 rs.close();
             }
@@ -827,25 +912,17 @@ public class Main {
         System.out.println("TestTypeCast end");
     }
 
-    public static void TestPreparedStatement() throws Exception{
-        System.out.println("TestPreparedStatement begin");
+    public static void TestAutomaticSwitchingNode() throws Exception{
+        System.out.println("TestAutomaticSwitchingNode begin");
 
         Connection conn = null;
         PreparedStatement stmt = null;
-
-//        DBConnection dbConnection = new DBConnection();
-//        dbConnection.connect("127.0.0.1",8848);
-//        BasicIntVector entity1 = (BasicIntVector)dbConnection.run("1..10000000");
-//        List<Entity> entities = new ArrayList<>(5);
-//        for(int i =0; i< 4; i++){
-//            entities.add(entity1);
-//        }
 
         try{
             Class.forName(JDBC_DRIVER);
             conn = DriverManager.getConnection(DB_URL_DFS);
             stmt = conn.prepareStatement("insert into pt values(?,?)");
-            //stmt.execute("t1 = table(1 as a, 2 as b, 3 as c, 4 as d)");
+            Thread.sleep(10000);
             List<Object> entities = Arrays.asList(new YearMonth[]{YearMonth.parse("2000-01"),YearMonth.parse("2000-01")},new double[]{0.4,0.5});
                     //Arrays.asList(YearMonth.parse("2018-06"),0.4);
             int index = 1;
@@ -905,6 +982,6 @@ public class Main {
                 se.printStackTrace();
             }
         }
-        System.out.println("TestPreparedStatement end");
+        System.out.println("TestAutomaticSwitchingNode end");
     }
 }

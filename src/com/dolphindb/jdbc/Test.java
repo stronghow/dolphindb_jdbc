@@ -64,19 +64,6 @@ public class Test {
 
         System.out.println(strings.getClass().getName());
 
-        //Main.TestTypeCast(4);
-        boolean[] booleans = new boolean[]{true};
-        byte[] bytes = new byte[]{(byte)97};
-        char[] chars = new char[]{'a'};
-        short[] shorts = new short[]{(short)1};
-        int[] ints = new int[]{1};
-        long[] longs = new long[]{1l};
-        float[] floats = new float[]{1.0f};
-        double[] doubles = new double[]{1.0};
-        String[] strings1 = new String[]{"1"};
-
-        System.out.println(booleans instanceof boolean[]);
-
         System.out.println(boolean[].class.getName());
         System.out.println(byte[].class.getName());
         System.out.println(char[].class.getName());
@@ -96,7 +83,6 @@ public class Test {
         System.out.println(Double[].class.getName());
         System.out.println(String[].class.getName());
 
-        System.out.println(strings1 instanceof Object[]);
-
+        Main.TestTypeCast(4);
     }
 }

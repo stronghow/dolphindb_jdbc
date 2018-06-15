@@ -138,6 +138,58 @@ public class TypeCast {
     }
 
 
+    public static String castDbString(Object o){
+        String srcClassName = o.getClass().getName();
+        switch (srcClassName){
+            case STRING:
+            case BASIC_STRING:
+                return "\""+o+"\"";
+            case CHAR:
+                return "'"+ o +"'";
+            case DATE:
+                return new BasicDate(((Date) o).toLocalDate()).toString();
+            case TIME:
+                return new BasicNanoTime(((Time) o).toLocalTime()).toString();
+            case TIMESTAMP:
+                return new BasicNanoTimestamp(((Timestamp) o).toLocalDateTime()).toString();
+            case YEAR_MONTH:
+                return new BasicMonth((YearMonth) o).toString();
+            case LOCAL_DATE:
+                return new BasicDate((LocalDate) o).toString();
+            case LOCAL_TIME:
+                return new BasicNanoTime((LocalTime) o).toString();
+            case LOCAL_DATETIME:
+                return new BasicNanoTimestamp((LocalDateTime) o).toString();
+            case BOOLEAN:
+            case BYTE:
+            case SHORT:
+            case INT:
+            case LONG:
+            case FLOAT:
+            case DOUBLE:
+            case BASIC_BOOLEAN:
+            case BASIC_BYTE:
+            case BASIC_SHORT:
+            case BASIC_INT:
+            case BASIC_LONG:
+            case BASIC_DATE:
+            case BASIC_MONTH:
+            case BASIC_TIME:
+            case BASIC_MINUTE:
+            case BASIC_SECOND:
+            case BASIC_DATETIME:
+            case BASIC_TIMESTAMP:
+            case BASIC_NANOTIME:
+            case BASIC_NANOTIMESTAMP:
+            case BASIC_FLOAT:
+            case BASIC_DOUBLE:
+                return o.toString();
+            default:
+                return null;
+        }
+    }
+
+
 
 
     public static Entity java2db(Object srcValue, String targetEntityClassName) throws IOException {

@@ -17,6 +17,7 @@ public class Driver implements java.sql.Driver {
     public static final String DB = "system_db";
     public static final Properties SYSTEM_PROPS = System.getProperties();
     public static final int V=1,v=0;
+
     private static final Logger LOGGER = Logger.getLogger("dolphindb");
     static {
         try {

@@ -1,7 +1,8 @@
 package com.dolphindb.jdbc;
 
-import com.xxdb.data.*;
-import com.xxdb.data.Void;
+import com.xxdb.data.BasicInt;
+import com.xxdb.data.BasicTable;
+import com.xxdb.data.Entity;
 
 import java.io.IOException;
 import java.sql.*;
@@ -14,9 +15,6 @@ public class JDBCStatement implements Statement {
 
     protected ResultSet resultSet;
 
-    protected String tableName;
-    protected boolean isInsert;
-
     protected String sql;
     protected String[] sqlSplit;
     protected Object[] values;
@@ -24,6 +22,10 @@ public class JDBCStatement implements Statement {
     protected Queue<Object> objectQueue;
     protected Object result;
     protected Deque<ResultSet> resultSets;
+
+    protected HashMap<String,String> tableTypes;
+
+    protected HashMap<String,HashMap<Integer,Integer>> colTypes;
 
     protected static final String IN_MEMORY_TABLE = "IN-MEMORY TABLE";
 
@@ -40,16 +42,35 @@ public class JDBCStatement implements Statement {
     @Override
     public ResultSet executeQuery(String sql) throws SQLException {
         checkClosed();
-        try {
-            Entity entity = connection.run(sql);
-            if(entity instanceof BasicTable){
-                resultSet = new JDBCResultSet(connection, this, entity, sql);
-                return resultSet;
-            }else{
+        sql = sql.trim();
+        String[] strings = sql.split(";");
+        if(strings.length == 0){
+            throw new SQLException("SQL was empty");
+        }else if(strings.length == 2){
+            throw new SQLException("check the SQL " + sql);
+        }
+        sql = strings[0];
+        int dml = Utils.getDml(sql);
+        Entity entity;
+        switch (dml){
+            case Utils.DML_INSERT:
+            case Utils.DML_UPDATE:
+            case Utils.DML_DELETE:
                 throw new SQLException("the given SQL statement produces anything other than a single ResultSet object");
-            }
-        }catch (IOException e){
-            throw new SQLException(e.getMessage());
+            case Utils.DML_SELECT:
+                try {
+                    entity = connection.run(sql);
+                    if(entity instanceof BasicTable){
+                        resultSet = new JDBCResultSet(connection, this, entity, sql);
+                        return resultSet;
+                    }else{
+                        throw new SQLException("the given SQL statement produces anything other than a single ResultSet object");
+                    }
+                }catch (IOException e){
+                    throw new SQLException(e);
+                }
+            default:
+                throw new SQLException("the given SQL statement produces anything other than a single ResultSet object");
         }
     }
 
@@ -57,29 +78,106 @@ public class JDBCStatement implements Statement {
     public int executeUpdate(String sql) throws SQLException {
         checkClosed();
         sql = sql.trim();
+        String[] strings = sql.split(";");
+        if(strings.length == 0){
+            throw new SQLException("SQL was empty");
+        }else if(strings.length == 2){
+            throw new SQLException("check the SQL " + sql);
+        }
+        sql = strings[0];
         String tableName = Utils.getTableName(sql);
-        try {
-            if(sql.startsWith("insert") || sql.startsWith("tableInsert")){
-                return tableInsert(sql).getInt();
-            }else{
-                if(tableName != null) {
-                    String tableType = connection.run("typestr " + tableName).getString();
-                    if(!tableType.equals(IN_MEMORY_TABLE)){
+        int dml = Utils.getDml(sql);
+        String tableType;
+        switch (dml) {
+            case Utils.DML_INSERT:
+                if (tableName != null) {
+                    if (tableTypes == null) {
+                        tableTypes = new LinkedHashMap<>();
+                    }
+                    tableType = tableTypes.get(tableName);
+                    if (tableType == null) {
+                        try {
+                            tableType = connection.run("typestr " + tableName).getString();
+                        } catch (IOException e) {
+                            throw new SQLException(e);
+                        }
+                        tableTypes.put(tableName, tableType);
+                    }
+                    if (tableType.equals(IN_MEMORY_TABLE)) {
+                        try {
+                            return tableInsert(tableName, sql).getInt();
+                        } catch (IOException e) {
+                            throw new SQLException(e);
+                        }
+                    } else {
+                        String[] values;
+                        int index = sql.indexOf(";");
+                        if (index == -1) {
+                            values = sql.substring(sql.indexOf("values") + "values".length()).replaceAll("\\(|\\)", "").split(",");
+                        } else {
+                            values = sql.substring(sql.indexOf("values") + "values".length(), index).replaceAll("\\(|\\)", "").split(",");
+                        }
+                        StringBuilder sqlSb = new StringBuilder("append!(").append(tableName).append(",").append("table(");
+
+                        char name = 'A';
+                        int colIndex = 0;
+                        for (String value : values) {
+                            sqlSb.append(value).append(" as ").append((char) (name + colIndex)).append("_,");
+                        }
+                        sqlSb.delete(sqlSb.length() - ",".length(), sqlSb.length());
+                        sqlSb.append("))");
+                        try {
+                            connection.run(sqlSb.toString());
+                            return SUCCESS_NO_INFO;
+                        } catch (IOException e) {
+                            new SQLException(e);
+                        }
+                    }
+                } else {
+                    throw new SQLException("check the SQL " + sql);
+                }
+
+            case Utils.DML_UPDATE:
+            case Utils.DML_DELETE:
+                if (tableName != null) {
+                    if (tableTypes == null) {
+                        tableTypes = new LinkedHashMap<>();
+                    }
+                    tableType = tableTypes.get(tableName);
+                    if (tableType == null) {
+                        try {
+                            tableType = connection.run("typestr " + tableName).getString();
+                        } catch (IOException e) {
+                            throw new SQLException(e);
+                        }
+                        tableTypes.put(tableName, tableType);
+                    }
+                    if (tableType.equals(IN_MEMORY_TABLE)) {
+                        try {
+                            connection.run(sql);
+                            return SUCCESS_NO_INFO;
+                        } catch (IOException e) {
+                            throw new SQLException(e);
+                        }
+                    } else {
                         throw new SQLException("only local in-memory table can update");
                     }
+                } else {
+                    throw new SQLException("check the Query " + sql);
                 }
-                Entity entity = connection.run(sql);
-                if(entity instanceof Void){
-                    return 0;
-                }else if(entity instanceof BasicTable){
-                    throw new SQLException("the given SQL statement produces a ResultSet object");
-                }else{
-                    // todo  update delete api return row
-                    return 0;
+            case Utils.DML_SELECT:
+                throw new SQLException("Can not issue SELECT via executeUpdate()");
+            default:
+                Entity entity;
+                try {
+                    entity = connection.run(sql);
+                }catch (IOException e){
+                    throw new SQLException(e);
                 }
-            }
-        }catch (Exception e){
-            throw new SQLException(e.getMessage());
+                if(entity instanceof BasicTable){
+                    throw new SQLException("Can not produces ResultSet");
+                }
+                return 0;
         }
     }
 
@@ -94,10 +192,16 @@ public class JDBCStatement implements Statement {
         result = null;
         if(objectQueue != null){
             objectQueue.clear();
+            objectQueue = null;
         }
-        objectQueue = null;
+
         if(resultSet != null) {
             resultSet.close();
+            objectQueue = null;
+        }
+
+        if(tableTypes != null){
+
         }
     }
 
@@ -163,44 +267,50 @@ public class JDBCStatement implements Statement {
     @Override
     public boolean execute(String sql) throws SQLException {
         checkClosed();
-        try {
-            String[] strings = sql.split(";");
-            for(String item : strings){
-                if(item.length()>0){
-                    if(item.startsWith("insert") || item.startsWith("tableInsert")){
-                        objectQueue.offer(tableInsert(item).getInt());
-                    }else if(item.startsWith("update")||item.startsWith("delete")){
-                        String tableName = Utils.getTableName(sql);
-                        if(tableName != null) {
-                            String tableType = connection.run("typestr " + tableName).getString();
-                            if(!tableType.equals(IN_MEMORY_TABLE)){
-                                throw new SQLException("only local in-memory table can update");
-                            }
-                        }
-                        //todo update delete api return row
-                        connection.run(item);
-                    }else{
-                        Entity entity = connection.run(item);
-                        if(entity instanceof  BasicTable){
-                            ResultSet resultSet_ = new JDBCResultSet(connection,this,entity,item);
-                            resultSets.offerLast(resultSet_);
-                            objectQueue.offer(new JDBCResultSet(connection,this,entity,item));
-                        }
-                    }
+        sql = sql.trim();
+        String[] strings = sql.split(";");
+        if(strings.length == 0){
+            throw new SQLException("SQL was empty");
+        }else if(strings.length == 2){
+            throw new SQLException("check the SQL " + sql);
+        }
+        sql = strings[0];
+        int dml = Utils.getDml(sql);
+        switch (dml){
+            case Utils.DML_SELECT: {
+                ResultSet resultSet_ = executeQuery(sql);
+                resultSets.offerLast(resultSet_);
+                objectQueue.offer(executeQuery(sql));
+            }
+            case Utils.DML_INSERT:
+            case Utils.DML_UPDATE:
+            case Utils.DML_DELETE:
+                objectQueue.offer(executeUpdate(sql));
+                break;
+            default: {
+                Entity entity;
+                try {
+                    entity = connection.run(sql);
+                } catch (IOException e) {
+                    throw new SQLException(e);
+                }
+                if (entity instanceof BasicTable) {
+                    ResultSet resultSet_ = new JDBCResultSet(connection, this, entity, sql);
+                    resultSets.offerLast(resultSet_);
+                    objectQueue.offer(resultSet_);
                 }
             }
-            if(objectQueue.isEmpty()){
+        }
+
+        if(objectQueue.isEmpty()){
+            return false;
+        }else {
+            result = objectQueue.poll();
+            if(result instanceof ResultSet){
+                return true;
+            }else{
                 return false;
-            }else {
-                result = objectQueue.poll();
-                if(result instanceof ResultSet){
-                    return true;
-                }else{
-                    return false;
-                }
             }
-        }catch (Exception e){
-            throw new SQLException(e.getMessage());
         }
     }
 
@@ -303,50 +413,19 @@ public class JDBCStatement implements Statement {
     @Override
     public int[] executeBatch() throws SQLException {
         checkClosed();
-        List<Integer> int_list = new ArrayList<>();
+        String[] strings = batch.toString().split(";");
+        int[] arr_int = new int[strings.length];
+        int index = 0;
         try {
-            String[] strings = batch.toString().split(";");
-            System.out.println(strings.length);
             for(String item : strings){
-                if(item.length()>0){
-                    System.out.println(item);
-                    if(item.startsWith("insert") || item.startsWith("tableInsert")){
-                        int_list.add(tableInsert(item).getInt());
-                    }else if(item.startsWith("update")||item.startsWith("delete")){
-                        String tableName = Utils.getTableName(item);
-                        if(tableName != null) {
-                            String tableType = connection.run("typestr " + tableName).getString();
-                            if(!tableType.equals(IN_MEMORY_TABLE)){
-                                throw new SQLException("only local in-memory table can update");
-                            }
-                        }
-                        //todo update delete api return row
-                        connection.run(item);
-                        int_list.add(SUCCESS_NO_INFO);
-                    }else{
-                        Entity entity = connection.run(item);
-                        if(entity instanceof  BasicTable){
-                            int size = int_list.size();
-                            int[] arr_int = new int[size];
-                            for(int i=0; i<size; ++i){
-                                arr_int[i] = int_list.get(i);
-                            }
-                            batch = new StringBuilder();
-                            throw new BatchUpdateException("can not return ResultSet",arr_int);
-                        }
-                    }
-                }
+                arr_int[index] = executeUpdate(item);
+                ++index;
             }
-            int size = int_list.size();
-            int[] arr_int = new int[size];
-            for(int i=0; i<size; ++i){
-                arr_int[i] = int_list.get(i);
-            }
-            batch = new StringBuilder();
+            batch.delete(0,batch.length());
             return arr_int;
         }catch (Exception e){
-            batch = new StringBuilder();
-            throw new SQLException(e.getMessage());
+            batch.delete(0,batch.length());
+            throw new BatchUpdateException(e.getMessage(),Arrays.copyOf(arr_int,index));
         }
     }
 
@@ -466,17 +545,16 @@ public class JDBCStatement implements Statement {
         return aClass.isInstance(this);
     }
 
-    protected BasicInt tableInsert(String sql) throws Exception{
+    protected BasicInt tableInsert(String tableName, String sql) throws IOException{
         if(sql.startsWith("tableInsert")){
             return (BasicInt)connection.run(sql);
         }else {
-            String tableName = sql.substring(sql.indexOf("into") + "into".length(), sql.indexOf("values"));
             String values;
             int index = sql.indexOf(";");
             if (index == -1) {
                 values = sql.substring(sql.indexOf("values") + "values".length());
             } else {
-                values = sql.substring(sql.indexOf("values") + "values".length(), sql.indexOf(";"));
+                values = sql.substring(sql.indexOf("values") + "values".length(), index);
             }
 
             String new_sql = MessageFormat.format("tableInsert({0},{1})", tableName, values);

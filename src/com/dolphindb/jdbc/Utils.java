@@ -15,6 +15,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Utils {
+    public static final int DML_OTHER = -1;
+    public static final int DML_SELECT = 0;
+    public static final int DML_INSERT = 1;
+    public static final int DML_UPDATE = 2;
+    public static final int DML_DELETE = 3;
+
+
     public static Object java2db(Object o){
         System.out.println(o instanceof Entity);
         if(o instanceof BasicStringVector || o instanceof BasicAnyVector || o instanceof AbstractVector || o instanceof Vector){
@@ -45,6 +52,7 @@ public class Utils {
         }
 
     }
+
 
     public static String dbVectorString(String s){
         String[] strings = s.substring(1,s.length()-1).split(",");
@@ -95,11 +103,17 @@ public class Utils {
         return properties;
     }
 
-    public static boolean isInsert(String sql){
-        if(sql.startsWith("insert") || sql.startsWith("tableInsert")){
-            return true;
-        }else{
-            return false;
+    public static int getDml(String sql){
+        if(sql.startsWith("select")){
+            return DML_SELECT;
+        }else if(sql.startsWith("insert") || sql.startsWith("tableInsert")){
+            return DML_INSERT;
+        }else if(sql.startsWith("update")){
+            return DML_UPDATE;
+        }else if(sql.startsWith("delete")){
+            return DML_DELETE;
+        }else {
+            return DML_OTHER;
         }
     }
 
