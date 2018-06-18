@@ -15,7 +15,7 @@ public class JDBCStatement implements Statement {
 
     protected ResultSet resultSet;
 
-    protected String sql;
+    private String sql;
     protected String[] sqlSplit;
     protected Object[] values;
     protected StringBuilder batch;
@@ -24,8 +24,6 @@ public class JDBCStatement implements Statement {
     protected Deque<ResultSet> resultSets;
 
     protected HashMap<String,String> tableTypes;
-
-    protected HashMap<String,HashMap<Integer,Integer>> colTypes;
 
     protected static final String IN_MEMORY_TABLE = "IN-MEMORY TABLE";
 
