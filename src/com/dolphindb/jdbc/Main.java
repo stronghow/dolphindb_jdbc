@@ -142,7 +142,13 @@ public class Main {
         //TestPreparedStatement(DB_URL_DFS,null,"select top 2 * from pt","delete from pt where x = ?",new Object[]{YearMonth.parse("2000-01")});
 
 
-        TestPreparedStatementInsert();
+        //TestPreparedStatementInsert();
+
+        //TestPreparedStatementBatch(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1","insert into t1 values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",o3);
+        //TestPreparedStatementBatch1(DB_URL,o3);
+        //TestPreparedStatementBatch2(DB_URL,o3);
+        TestPreparedStatementBatch3(DB_URL_DFS,new Object[][]{new Object[]{YearMonth.parse("2000-01"), 0.5}});
+        //CreateTable(System.getProperty("user.dir").replaceAll("\\\\","/") + "/data/createTable_all.java",path_All,"t1");
 
 //        DBConnection dbConnection = new DBConnection();
 //        dbConnection.connect("127.0.0.1",8848);
@@ -171,7 +177,6 @@ public class Main {
         //TestResultSetDelete(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",2,false);
         //TestResultSetDelete(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",2,true);
 
-        //TestPreparedStatementBatch(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1","insert into t1 values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",o3);
 
 
 
@@ -347,6 +352,180 @@ public class Main {
             }
         }
         System.out.println("TestPreparedStatement end");
+    }
+
+    public static void TestPreparedStatementBatch1(String url,Object[] objects) throws Exception{
+        System.out.println("TestPreparedStatementBatch1 begin");
+
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        try{
+            Class.forName(JDBC_DRIVER);
+            conn = DriverManager.getConnection(url);
+            stmt = conn.prepareStatement("insert into t1 values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            stmt.execute("t1 = loadTable(system_db,`t1)");
+            stmt.execute("t2 = table(1 as a, 1 as b)");
+            for(int i=0; i<objects.length; ++i){
+                int index = 1;
+                Object[] o = (Object[]) objects[i];
+                for(Object o1: o){
+                    stmt.setObject(index,o1);
+                    ++index;
+                }
+                stmt.addBatch();
+            }
+            stmt.addBatch("insert into t2 values(1,2)");
+            stmt.addBatch("update t2 set a = 2 where a = 1");
+            stmt.addBatch("delete from t2 where b = 1");
+            int[] arr_int = stmt.executeBatch();
+            for(int i : arr_int){
+                System.out.print(i+" ");
+            }
+            System.out.println();
+            ResultSet rs = stmt.executeQuery("select * from t1");
+            printData(rs);
+            rs.close();
+            rs = stmt.executeQuery("select * from t2");
+            printData(rs);
+            rs.close();
+            stmt.close();
+            conn.close();
+//        }catch (BatchUpdateException e){
+//            System.out.println(e.getMessage());
+//         int[] arr_int  = e.getUpdateCounts();
+//         for (int item : arr_int){
+//             System.out.print(item+" ");
+//         }
+//            System.out.println();
+        }catch(SQLException se){
+            se.printStackTrace();
+        }catch(Exception e){
+            e.printStackTrace();
+        }finally{
+            try{
+                if(stmt!=null) stmt.close();
+            }catch(SQLException se2){
+            }
+            try{
+                if(conn!=null) conn.close();
+            }catch(SQLException se){
+                se.printStackTrace();
+            }
+        }
+        System.out.println("TestPreparedStatementBatch1 end");
+    }
+
+    public static void TestPreparedStatementBatch2(String url,Object[] objects) throws Exception{
+        System.out.println("TestPreparedStatementBatch2 begin");
+
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        try{
+            Class.forName(JDBC_DRIVER);
+            conn = DriverManager.getConnection(url);
+            stmt = conn.prepareStatement("insert into t1 values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            stmt.execute("t1 = loadTable(system_db,`t1)");
+            stmt.execute("t2 = table(1 as a, 2 as b)");
+            for(int i=0; i<objects.length; ++i){
+                int index = 1;
+                Object[] o = (Object[]) objects[i];
+                for(Object o1: o){
+                    stmt.setObject(index,o1);
+                    ++index;
+                }
+                stmt.addBatch();
+            }
+            stmt.addBatch("insert into t2 values(1,2)");
+            stmt.addBatch("select * from t2");
+            int[] arr_int = stmt.executeBatch();
+            for(int i : arr_int){
+                System.out.print(i+" ");
+            }
+            System.out.println();
+            ResultSet rs = stmt.executeQuery("select * from t1");
+            printData(rs);
+            rs.close();
+            rs = stmt.executeQuery("select * from t2");
+            printData(rs);
+            rs.close();
+            stmt.close();
+            conn.close();
+        }catch (BatchUpdateException e){
+            int[] arr_int  = e.getUpdateCounts();
+            for (int item : arr_int){
+                System.out.print(item+" ");
+            }
+            System.out.println();
+        }catch(SQLException se){
+            se.printStackTrace();
+        }catch(Exception e){
+            e.printStackTrace();
+        }finally{
+            try{
+                if(stmt!=null) stmt.close();
+            }catch(SQLException se2){
+            }
+            try{
+                if(conn!=null) conn.close();
+            }catch(SQLException se){
+                se.printStackTrace();
+            }
+        }
+        System.out.println("TestPreparedStatementBatch2 end");
+    }
+
+    public static void TestPreparedStatementBatch3(String url,Object[] objects) throws Exception{
+        System.out.println("TestPreparedStatementBatch3 begin");
+
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        try{
+            Class.forName(JDBC_DRIVER);
+            conn = DriverManager.getConnection(url);
+            stmt = conn.prepareStatement("insert into pt values(?, ?)");
+            for(int i=0; i<objects.length; ++i){
+                int index = 1;
+                Object[] o = (Object[]) objects[i];
+                for(Object o1: o){
+                    stmt.setObject(index,o1);
+                    ++index;
+                }
+                stmt.addBatch();
+            }
+            stmt.addBatch("insert into pt values(2000.01M,0.4)");
+            int[] arr_int = stmt.executeBatch();
+            for(int i : arr_int){
+                System.out.print(i+" ");
+            }
+            System.out.println();
+            ResultSet rs = stmt.executeQuery("select top 10 * from pt");
+            printData(rs);
+            rs.close();
+            stmt.close();
+            conn.close();
+//        }catch (BatchUpdateException e){
+//            System.out.println(e.getMessage());
+//         int[] arr_int  = e.getUpdateCounts();
+//         for (int item : arr_int){
+//             System.out.print(item+" ");
+//         }
+//            System.out.println();
+        }catch(SQLException se){
+            se.printStackTrace();
+        }catch(Exception e){
+            e.printStackTrace();
+        }finally{
+            try{
+                if(stmt!=null) stmt.close();
+            }catch(SQLException se2){
+            }
+            try{
+                if(conn!=null) conn.close();
+            }catch(SQLException se){
+                se.printStackTrace();
+            }
+        }
+        System.out.println("TestPreparedStatementBatch3 end");
     }
 
     public static void TestPreparedStatementBatch(String url,String loadTable, String select, String batchSql, Object[] objects) throws Exception{

@@ -18,11 +18,13 @@ import java.util.*;
 
 public class JDBCPrepareStatement extends JDBCStatement implements PreparedStatement {
 
-    private String tableName = null;
+    private String tableName;
 
     private Entity tableNameArg;
 
     private String preSql;
+
+    private int dml;
 
     private Object arguments;
 
@@ -32,27 +34,52 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
 
     private boolean isInsert = false;
 
-    private String tableType = null;
+    private String tableType;
 
     private HashMap<Integer,Integer> colType;
 
 
-    public JDBCPrepareStatement(JDBCConnection connection, String sql){
+    public JDBCPrepareStatement(JDBCConnection connection, String sql) throws SQLException{
         super(connection);
         this.connection = connection;
-        this.preSql = sql.trim()+" ";
+        this.preSql = sql.trim();
+
+        String[] strings = preSql.split(";");
+        if(strings.length == 0){
+            throw new SQLException("SQL was empty");
+        }else if(strings.length == 2){
+            throw new SQLException("check the SQL " + preSql);
+        }
+        this.preSql = strings[0];
 
         this.tableName = Utils.getTableName(sql);
-        this.isInsert = Utils.getDml(sql) == Utils.DML_INSERT;
+        this.dml = Utils.getDml(sql);
+        this.isInsert = this.dml == Utils.DML_INSERT;
 
         if(tableName != null){
             tableName = tableName.trim();
             tableNameArg = new BasicString(tableName);
+            if(tableTypes == null){
+                tableTypes = new LinkedHashMap<>();
+            }
         }
 
         sqlSplit = this.preSql.split("\\?");
         values = new Object[sqlSplit.length+1];
         batch = new StringBuilder();
+    }
+
+    private void getTableType(){
+        if(tableType == null) {
+            try {
+                tableType = connection.run("typestr " + tableName).getString();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            if (tableType != null) {
+                tableTypes.put(tableName, tableType);
+            }
+        }
     }
 
     @Override
@@ -71,33 +98,11 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
             }
         }
 
-        String[] strings = preSql.split(";");
-        if(strings.length == 0){
-            throw new SQLException("SQL was empty");
-        }else if(strings.length == 2){
-            throw new SQLException("check the SQL " + preSql);
-        }
-        preSql = strings[0];
-        String tableName = Utils.getTableName(preSql);
-        int dml = Utils.getDml(preSql);
-        String tableType;
         switch (dml) {
             case Utils.DML_INSERT:
                 if (tableName != null) {
-                    if (tableTypes == null) {
-                        tableTypes = new LinkedHashMap<>();
-                    }
-                    tableType = tableTypes.get(tableName);
-                    if (tableType == null) {
-                        try {
-                            tableType = connection.run("typestr " + tableName).getString();
-                        } catch (IOException e) {
-                            throw new SQLException(e);
-                        }
-                        tableTypes.put(tableName, tableType);
-                    }
+                    getTableType();
                     BasicInt basicInt;
-
                     if (tableType.equals(IN_MEMORY_TABLE)) {
                         try {
                             basicInt = (BasicInt) connection.run("tableInsert", (List<Entity>) arguments);
@@ -106,68 +111,7 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
                             throw new SQLException(e);
                         }
                     } else {
-                        List<Entity> newArguments = (List<Entity>) arguments;
-                        int size = newArguments.size();
-                        if (size > 1) {
-                            if (newArguments.get(1) instanceof Vector) {
-                                int insertRows = newArguments.get(1).rows();
-                                List<String> colNames = new ArrayList<>();
-                                List<Vector> cols = new ArrayList<>(size - 1);
-                                if (tableDFS == null) {
-                                    try {
-                                        tableDFS = (BasicTable) connection.run(tableName);
-                                    }catch (IOException e){
-                                        throw new SQLException(e);
-                                    }
-                                }
-                                for (int i = 1, len = size; i < len; i++) {
-                                    colNames.add(tableDFS.getColumnName(i - 1));
-                                    cols.add((Vector) newArguments.get(i));
-                                }
-                                BasicTable insertTable = new BasicTable(colNames, cols);
-                                newArguments = new ArrayList<>(2);
-                                newArguments.add(tableDFS);
-                                newArguments.add(insertTable);
-                                try {
-                                    connection.run("append!", newArguments);
-                                }catch (IOException e){
-                                    throw new SQLException(e);
-                                }
-                                return  insertRows;
-                            } else {
-                                int insertRows = 1;
-                                List<String> colNames = new ArrayList<>();
-                                List<Vector> cols = new ArrayList<>(size - 1);
-                                for (int i = 1, len = size; i < len; i++) {
-                                    colNames.add("" + i);
-                                    BasicAnyVector basicAnyVector = new BasicAnyVector(1);
-                                    try {
-                                        basicAnyVector.set(0, (Scalar) newArguments.get(i));
-                                    }catch (Exception e){
-                                        throw new SQLException(e);
-                                    }
-                                    cols.add(basicAnyVector);
-                                }
-                                BasicTable insertTable = new BasicTable(colNames, cols);
-                                newArguments = new ArrayList<>(2);
-                                if (tableDFS == null) {
-                                    try {
-                                        tableDFS = (BasicTable) connection.run(tableName);
-                                    }catch (IOException e){
-                                        throw new SQLException(e);
-                                    }
-                                }
-                                newArguments.add(tableDFS);
-                                newArguments.add(insertTable);
-                                try {
-                                    connection.run("append!", newArguments);
-                                }catch (IOException e){
-                                    throw new SQLException(e);
-                                }
-                                return  insertRows;
-                            }
-                        }
-                        return 0;
+                        return tableAppend();
                     }
                 } else {
                     throw new SQLException("check the SQL " + preSql);
@@ -176,18 +120,7 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
             case Utils.DML_UPDATE:
             case Utils.DML_DELETE:
                 if (tableName != null) {
-                    if (tableTypes == null) {
-                        tableTypes = new LinkedHashMap<>();
-                    }
-                    tableType = tableTypes.get(tableName);
-                    if (tableType == null) {
-                        try {
-                            tableType = connection.run("typestr " + tableName).getString();
-                        } catch (IOException e) {
-                            throw new SQLException(e);
-                        }
-                        tableTypes.put(tableName, tableType);
-                    }
+                    getTableType();
                     if (tableType.equals(IN_MEMORY_TABLE)) {
                         try {
                              return super.executeUpdate((String) arguments);
@@ -219,6 +152,71 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
                 }
                 return 0;
         }
+    }
+
+    private int tableAppend() throws SQLException{
+        List<Entity> newArguments = (List<Entity>) arguments;
+        int size = newArguments.size();
+        if (size > 1) {
+            if (newArguments.get(1) instanceof Vector) {
+                int insertRows = newArguments.get(1).rows();
+                List<String> colNames = new ArrayList<>();
+                List<Vector> cols = new ArrayList<>(size - 1);
+                if (tableDFS == null) {
+                    try {
+                        tableDFS = (BasicTable) connection.run(tableName);
+                    }catch (IOException e){
+                        throw new SQLException(e);
+                    }
+                }
+                for (int i = 1, len = size; i < len; i++) {
+                    colNames.add(tableDFS.getColumnName(i - 1));
+                    cols.add((Vector) newArguments.get(i));
+                }
+                BasicTable insertTable = new BasicTable(colNames, cols);
+                newArguments = new ArrayList<>(2);
+                newArguments.add(tableDFS);
+                newArguments.add(insertTable);
+                try {
+                    connection.run("append!", newArguments);
+                }catch (IOException e){
+                    throw new SQLException(e);
+                }
+                return  insertRows;
+            } else {
+                int insertRows = 1;
+                List<String> colNames = new ArrayList<>();
+                List<Vector> cols = new ArrayList<>(size - 1);
+                for (int i = 1, len = size; i < len; i++) {
+                    colNames.add("" + i);
+                    BasicAnyVector basicAnyVector = new BasicAnyVector(1);
+                    try {
+                        basicAnyVector.set(0, (Scalar) newArguments.get(i));
+                    }catch (Exception e){
+                        throw new SQLException(e);
+                    }
+                    cols.add(basicAnyVector);
+                }
+                BasicTable insertTable = new BasicTable(colNames, cols);
+                newArguments = new ArrayList<>(2);
+                if (tableDFS == null) {
+                    try {
+                        tableDFS = (BasicTable) connection.run(tableName);
+                    }catch (IOException e){
+                        throw new SQLException(e);
+                    }
+                }
+                newArguments.add(tableDFS);
+                newArguments.add(insertTable);
+                try {
+                    connection.run("append!", newArguments);
+                }catch (IOException e){
+                    throw new SQLException(e);
+                }
+                return  insertRows;
+            }
+        }
+        return 0;
     }
 
     @Override
@@ -351,15 +349,6 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
     public boolean execute() throws SQLException {
         super.checkClosed();
         checkClosed();
-        preSql = preSql.trim();
-        String[] strings = preSql.split(";");
-        if(strings.length == 0){
-            throw new SQLException("SQL was empty");
-        }else if(strings.length == 2){
-            throw new SQLException("check the SQL " + preSql);
-        }
-        preSql = strings[0];
-        int dml = Utils.getDml(preSql);
         switch (dml){
             case Utils.DML_SELECT: {
                 ResultSet resultSet_ = executeQuery(preSql);
@@ -446,8 +435,10 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
                 } else {
                     arr_int[index] = executeUpdate();
                 }
+                index++;
             }
         }catch (SQLException e){
+            e.printStackTrace();
             throw new BatchUpdateException(e.getMessage(),Arrays.copyOf(arr_int,index));
         }
         return arr_int;
@@ -661,6 +652,7 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
             arguments.add(tableNameArg);
             for (int i = 1; i < sqlSplit.length; ++i) {
                 String s = TypeCast.TYPEINT2STRING.get(colType.get(i));
+                System.out.println(values[i].getClass().getName());
                 arguments.add(TypeCast.java2db(values[i], s));
             }
             return arguments;

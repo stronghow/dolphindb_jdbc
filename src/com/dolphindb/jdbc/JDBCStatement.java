@@ -12,21 +12,15 @@ import java.util.*;
 public class JDBCStatement implements Statement {
 
     protected JDBCConnection connection;
-
     protected ResultSet resultSet;
-
-    private String sql;
     protected String[] sqlSplit;
     protected Object[] values;
     protected StringBuilder batch;
     protected Queue<Object> objectQueue;
     protected Object result;
     protected Deque<ResultSet> resultSets;
-
     protected HashMap<String,String> tableTypes;
-
     protected static final String IN_MEMORY_TABLE = "IN-MEMORY TABLE";
-
     protected boolean isClosed;
 
 
@@ -34,6 +28,24 @@ public class JDBCStatement implements Statement {
         this.connection = cnn;
         objectQueue = new LinkedList<>();
         resultSets = new LinkedList<>();
+    }
+
+    private String getTableType(String tableName) throws SQLException{
+        if (tableTypes == null) {
+            tableTypes = new LinkedHashMap<>();
+        }
+        String tableType = tableTypes.get(tableName);
+        if (tableType == null) {
+            try {
+                tableType = connection.run("typestr " + tableName).getString();
+            } catch (IOException e) {
+                throw new SQLException(e);
+            }
+            tableTypes.put(tableName, tableType);
+            return tableType;
+        }else{
+            return tableType;
+        }
     }
 
 
@@ -89,18 +101,7 @@ public class JDBCStatement implements Statement {
         switch (dml) {
             case Utils.DML_INSERT:
                 if (tableName != null) {
-                    if (tableTypes == null) {
-                        tableTypes = new LinkedHashMap<>();
-                    }
-                    tableType = tableTypes.get(tableName);
-                    if (tableType == null) {
-                        try {
-                            tableType = connection.run("typestr " + tableName).getString();
-                        } catch (IOException e) {
-                            throw new SQLException(e);
-                        }
-                        tableTypes.put(tableName, tableType);
-                    }
+                    tableType = getTableType(tableName);
                     if (tableType.equals(IN_MEMORY_TABLE)) {
                         try {
                             return tableInsert(tableName, sql).getInt();
@@ -121,6 +122,7 @@ public class JDBCStatement implements Statement {
                         int colIndex = 0;
                         for (String value : values) {
                             sqlSb.append(value).append(" as ").append((char) (name + colIndex)).append("_,");
+                            colIndex++;
                         }
                         sqlSb.delete(sqlSb.length() - ",".length(), sqlSb.length());
                         sqlSb.append("))");
@@ -138,18 +140,7 @@ public class JDBCStatement implements Statement {
             case Utils.DML_UPDATE:
             case Utils.DML_DELETE:
                 if (tableName != null) {
-                    if (tableTypes == null) {
-                        tableTypes = new LinkedHashMap<>();
-                    }
-                    tableType = tableTypes.get(tableName);
-                    if (tableType == null) {
-                        try {
-                            tableType = connection.run("typestr " + tableName).getString();
-                        } catch (IOException e) {
-                            throw new SQLException(e);
-                        }
-                        tableTypes.put(tableName, tableType);
-                    }
+                    tableType = getTableType(tableName);
                     if (tableType.equals(IN_MEMORY_TABLE)) {
                         try {
                             connection.run(sql);
@@ -183,7 +174,6 @@ public class JDBCStatement implements Statement {
     public void close() throws SQLException {
         checkClosed();
         isClosed = true;
-        sql = null;
         sqlSplit = null;
         values = null;
         batch = null;
@@ -199,7 +189,8 @@ public class JDBCStatement implements Statement {
         }
 
         if(tableTypes != null){
-
+            tableTypes.clear();
+            tableTypes = null;
         }
     }
 
