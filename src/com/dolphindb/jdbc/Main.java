@@ -21,8 +21,6 @@ public class Main {
 
     private static final String path_All = "/data/dballdata";
 
-    private static final String path_test = "/data/test";
-
     private static final String DB_URL = MessageFormat.format("jdbc:dolphindb://localhost:8848?databasePath={0}{1}",System.getProperty("user.dir").replaceAll("\\\\","/"),path_All);
 
     private static final String DB_URL1 = "jdbc:dolphindb://";
@@ -34,7 +32,6 @@ public class Main {
     public static void main(String[] args) throws Exception{
 
        //CreateTable(System.getProperty("user.dir")+"/data/createTable_all.java",path_All,"t1");
-
 
         Object[] o1 = new Object[]{true, 'a', 122, 21, 22, 2.1f, 2.1, "Hello",
                 new BasicDate(LocalDate.parse("2013-06-13")),
@@ -150,18 +147,6 @@ public class Main {
         TestPreparedStatementBatch3(DB_URL_DFS,new Object[][]{new Object[]{YearMonth.parse("2000-01"), 0.5}});
         //CreateTable(System.getProperty("user.dir").replaceAll("\\\\","/") + "/data/createTable_all.java",path_All,"t1");
 
-//        DBConnection dbConnection = new DBConnection();
-//        dbConnection.connect("127.0.0.1",8848);
-//        dbConnection.run("t1 = table(1 as a, 1 as b, 1 as c, 1 as d, 1 as f)");
-//        BasicInt basicInt = new BasicInt(1);
-//        List<Entity> arguments = Arrays.asList(new BasicString("t1"), basicInt, basicInt, basicInt, basicInt,basicInt);
-//        long time = System.currentTimeMillis();
-//        for(int i = 0; i<1000000; ++i){
-//            dbConnection.run("tableInsert",arguments);
-//            //dbConnection.run("tableInsert",arguments);
-//        }
-//        System.out.println(System.currentTimeMillis() - time +"ms");
-
 
         //TestAutomaticSwitchingNode();
 
@@ -186,21 +171,6 @@ public class Main {
 
         //TestResultSetDelete(DB_URL_DFS,"pt = loadTable(system_db,`pt)","select top 10 * from pt",1,true);
 
-
-
-
-//        String sql = "bool = [true, false];\n" +
-//                "int = [1, 2];\n" +
-//                "t1 = table(bool, int);\n" +
-//                "insert into t1 values (bool, int);\n";
-        //TestResultSetUpdate(DB_URL,sql,"select * from t1",new Object[]{true, 3},true);
-
-        //TestStatementExecute(DB_URL_DFS1,"select  top 10 * from pt");
-
-        //TestDatabaseMetaData(DB_URL1,"");
-
-
-        //TestPreparedStatement();
 
         //TestDatabaseMetaData(DB_URL1,"");
 
@@ -762,143 +732,6 @@ public class Main {
             }
             System.out.print("\n");
         }
-    }
-
-    public static void TestPreparedStatementInsert() throws Exception{
-        System.out.println("TestStatement begin");
-
-        Connection conn = null;
-        PreparedStatement stmt = null;
-
-        int size = 100000;
-
-        byte[] bytes = new byte[size];
-        int[] ints = new int[size];
-        byte b = (byte)97;
-        for (int i = 0; i < size; ++i){
-            bytes[i] = b;
-            ints[i] = i;
-        }
-
-        BasicByteVector basicByteVector = new BasicByteVector(bytes);
-        BasicIntVector basicIntVector = new BasicIntVector(ints);
-
-        List<Entity> entities = Arrays.asList(basicIntVector,basicByteVector);
-
-        try{
-            Class.forName(JDBC_DRIVER);
-            conn = DriverManager.getConnection(DB_URL1);
-            stmt = conn.prepareStatement("insert into t1 values(?,?,?,?,?)");
-            stmt.execute("t1 = table(1 as a, 1 as b, 1 as c, 1 as d, 1 as f)");
-//            long time = System.currentTimeMillis();
-//            BasicByte basicByte = new BasicByte((byte)97);
-//            for(int i = 0; i<1000000; ++i){
-//                //stmt.setObject(1,i);
-//                stmt.setObject(1,basicByte);
-//                stmt.execute();
-//            }
-//            System.out.println(System.currentTimeMillis() - time + "ms");
-
-//            int index = 1;
-//            for(Entity entity: entities){
-//                stmt.setObject(index,entity);
-//                ++index;
-//            }
-
-            Thread t1 = new MyThread(stmt,0,100000-1);
-            Thread t2 = new MyThread(stmt,100000,200000-1);
-            Thread t3 = new MyThread(stmt,200000,300000-1);
-            Thread t4 = new MyThread(stmt,300000,400000-1);
-            Thread t5 = new MyThread(stmt,400000,500000-1);
-            Thread t6 = new MyThread(stmt,500000,600000-1);
-            Thread t7 = new MyThread(stmt,600000,700000-1);
-            Thread t8 = new MyThread(stmt,700000,800000-1);
-            Thread t9 = new MyThread(stmt,800000,900000-1);
-            Thread t10 = new MyThread(stmt,900000,1000000-1);
-
-            long time = System.currentTimeMillis();
-            t1.start();
-            t2.start();
-            t3.start();
-            t4.start();
-            t5.start();
-            t6.start();
-            t7.start();
-            t8.start();
-            t9.start();
-            t10.start();
-
-            try {
-                t1.join();
-                t2.join();
-                t3.join();
-                t4.join();
-                t5.join();
-                t6.join();
-                t7.join();
-                t8.join();
-                t9.join();
-                t10.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            System.out.println(System.currentTimeMillis() - time + "ms");
-
-            ResultSet rs = null;
-            int UpdateCount = -1;
-            time = System.currentTimeMillis();
-            if(stmt.execute()){
-                rs = stmt.getResultSet();
-                //printData(rs);
-            }else {
-                UpdateCount =  stmt.getUpdateCount();
-                if(UpdateCount != -1) {
-                    System.out.println(UpdateCount + " row affected");
-                }
-            }
-            System.out.println(System.currentTimeMillis() - time + "ms");
-            while (true){
-                if(stmt.getMoreResults()){
-                    rs =  stmt.getResultSet();
-                    //printData(rs);
-                }else{
-                    UpdateCount =  stmt.getUpdateCount();
-                    if(UpdateCount != -1) {
-                        System.out.println(UpdateCount + "row affected");
-                    }else{
-                        break;
-                    }
-                }
-            }
-            if(rs != null) {
-                rs.close();
-            }
-            rs = stmt.executeQuery("select * from t1");
-            rs.last();
-            System.out.println(rs.getRow());
-//            rs.beforeFirst();
-//            printData(rs);
-
-            if(rs != null) {
-                rs.close();
-            }
-            stmt.close();
-            conn.close();
-        }catch(Exception e){
-            e.printStackTrace();
-        }finally{
-            try{
-                if(stmt!=null) stmt.close();
-            }catch(SQLException se2){
-            }
-            try{
-                if(conn!=null) conn.close();
-            }catch(SQLException se){
-                se.printStackTrace();
-            }
-        }
-        System.out.println("TestPreparedStatement end");
     }
 
     public static void TestTypeCast(int type) throws Exception{
