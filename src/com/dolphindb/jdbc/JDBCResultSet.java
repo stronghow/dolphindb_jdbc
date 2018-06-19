@@ -12,9 +12,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 
-/**
- * JDBCResultSet Operation is in memory only, not persisted
- */
 
 public class JDBCResultSet implements ResultSet{
     private JDBCConnection conn;
@@ -42,7 +39,6 @@ public class JDBCResultSet implements ResultSet{
 
 
     public JDBCResultSet(JDBCConnection conn, JDBCStatement statement, Entity entity, String sql) throws SQLException{
-        sql = sql.replaceAll("\n","").trim();
         this.conn = conn;
         this.statement = statement;
 
@@ -1334,20 +1330,6 @@ public class JDBCResultSet implements ResultSet{
         where.delete(where.length()-2,where.length());
         sb.append(where);
 
-        String sql = sb.toString();
-        run(sql);
-    }
-
-
-    private void insertRun() throws SQLException{
-        StringBuilder sb = new StringBuilder();
-        sb.append("insert into ").append(tableName).append(" values ( ");
-        for (int i = 1; i <= table.columns(); ++i) {
-            sb.append(Utils.java2db(insertRowMap.get(i))).append(", ");
-
-        }
-        sb.delete(sb.length()-2,sb.length());
-        sb.append(")");
         String sql = sb.toString();
         run(sql);
     }

@@ -250,7 +250,6 @@ public class TypeCast {
 
 
         if(srcValue instanceof Object[]){
-            System.out.println("here");
             castEntity = basicTypeArr2Vector(srcValue,targetEntityClassName);
             if (castEntity != null) return castEntity;
         }

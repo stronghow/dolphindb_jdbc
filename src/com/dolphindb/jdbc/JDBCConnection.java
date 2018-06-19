@@ -19,7 +19,6 @@ public  class JDBCConnection implements Connection {
     private int port;
     private boolean success;
     private Vector databases;
-    private HashMap<String,Boolean> loadTable;
     private String url;
     private DatabaseMetaData metaData;
     private List<String> hostName_ports;
@@ -85,8 +84,6 @@ public  class JDBCConnection implements Connection {
                     hostName_ports.add(siteVector.get(i).getString());
                 }
             }
-
-            //loadTable = new HashMap<>(databases.rows());
         }
     }
 
@@ -408,13 +405,11 @@ public  class JDBCConnection implements Connection {
 
     //Automatic switching node
     private DBConnection getDbConnection(int index, int size) throws IOException{
-        System.out.println(index);
         if(index >= size) throw new IOException("dataNode all death");
         boolean next = false;
         try {
             for ( ; index<size; ++index){
                 String[] hostName_port = hostName_ports.get(index).split(":");
-                System.out.println(hostName_port[0]+":"+hostName_port[1]);
                 this.dbConnection.close();
                 this.dbConnection = new DBConnection();
                 if(this.dbConnection.connect(hostName_port[0],Integer.parseInt(hostName_port[1]))){

@@ -23,7 +23,6 @@ public class Utils {
 
 
     public static Object java2db(Object o){
-        System.out.println(o instanceof Entity);
         if(o instanceof BasicStringVector || o instanceof BasicAnyVector || o instanceof AbstractVector || o instanceof Vector){
             String s = ((Vector)o).getString();
             if(((Vector) o).get(0) instanceof BasicString){

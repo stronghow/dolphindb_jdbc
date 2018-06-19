@@ -652,7 +652,6 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
             arguments.add(tableNameArg);
             for (int i = 1; i < sqlSplit.length; ++i) {
                 String s = TypeCast.TYPEINT2STRING.get(colType.get(i));
-                System.out.println(values[i].getClass().getName());
                 arguments.add(TypeCast.java2db(values[i], s));
             }
             return arguments;
