@@ -118,10 +118,10 @@ public class JDBCStatement implements Statement {
                         }
                         StringBuilder sqlSb = new StringBuilder("append!(").append(tableName).append(",").append("table(");
 
-                        char name = 'A';
-                        int colIndex = 0;
+                        String colName = "col";
+                        int colIndex = 1;
                         for (String value : values) {
-                            sqlSb.append(value).append(" as ").append((char) (name + colIndex)).append("_,");
+                            sqlSb.append(value).append(" as ").append(colName+colIndex).append(",");
                             colIndex++;
                         }
                         sqlSb.delete(sqlSb.length() - ",".length(), sqlSb.length());
