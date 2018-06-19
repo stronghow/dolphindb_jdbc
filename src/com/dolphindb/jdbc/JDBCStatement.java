@@ -136,7 +136,6 @@ public class JDBCStatement implements Statement {
                 } else {
                     throw new SQLException("check the SQL " + sql);
                 }
-
             case Utils.DML_UPDATE:
             case Utils.DML_DELETE:
                 if (tableName != null) {

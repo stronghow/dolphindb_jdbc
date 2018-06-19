@@ -10,10 +10,6 @@ import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
 import java.sql.Date;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.YearMonth;
 import java.util.*;
 
 public class JDBCPrepareStatement extends JDBCStatement implements PreparedStatement {
@@ -32,7 +28,7 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
 
     private BasicTable tableDFS;
 
-    private boolean isInsert = false;
+    private boolean isInsert;
 
     private String tableType;
 
@@ -322,8 +318,10 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
     @Override
     public void clearParameters() throws SQLException {
         super.clearBatch();
-        for(Object item : values){
-            item = null;
+        if(values != null){
+            for(int i = 0, len = values.length; i < len; ++i){
+                values[i] = null;
+            }
         }
     }
 
@@ -355,10 +353,12 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
                 resultSets.offerLast(resultSet_);
                 objectQueue.offer(executeQuery());
             }
+                break;
             case Utils.DML_INSERT:
             case Utils.DML_UPDATE:
-            case Utils.DML_DELETE:
+            case Utils.DML_DELETE: {
                 objectQueue.offer(executeUpdate());
+            }
                 break;
             default: {
                 Entity entity;
@@ -602,39 +602,6 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
         Driver.unused();
     }
 
-    public void setBasicDate(int parameterIndex, LocalDate date) throws SQLException{
-        setObject(parameterIndex, date);
-    }
-
-    public void setBasicMonth(int parameterIndex, YearMonth yearMonth) throws SQLException{
-        setObject(parameterIndex,new BasicMonth(yearMonth));
-    }
-
-    public void setBasicMinute(int parameterIndex, LocalTime time) throws SQLException{
-        setObject(parameterIndex,new BasicMinute(time));
-    }
-
-    public void setBasicSecond(int parameterIndex, LocalTime time) throws SQLException{
-        setObject(parameterIndex,new BasicSecond(time));
-    }
-
-    public void setBasicDateTime(int parameterIndex, LocalDateTime time) throws SQLException{
-        setObject(parameterIndex,new BasicDateTime(time));
-    }
-
-    public void setBasicTimestamp(int parameterIndex, LocalDateTime time) throws SQLException{
-        setObject(parameterIndex, new BasicTimestamp(time));
-    }
-
-    public void setBasicNanotime(int parameterIndex, LocalTime time) throws SQLException{
-        setObject(parameterIndex, new BasicNanoTime(time));
-    }
-
-    public void setBasicNanotimestamp(int parameterIndex, LocalDateTime time) throws SQLException{
-        setObject(parameterIndex, new BasicNanoTimestamp(time));
-    }
-
-
     private Object createArguments() throws IOException {
         if(isInsert) {
             if (colType == null) {
@@ -647,7 +614,6 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
                     colType.put(i + 1, typeInt.getInt(i));
                 }
             }
-
             List<Entity> arguments = new ArrayList<>(sqlSplit.length);
             arguments.add(tableNameArg);
             for (int i = 1; i < sqlSplit.length; ++i) {

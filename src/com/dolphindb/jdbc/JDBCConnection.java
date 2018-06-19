@@ -133,9 +133,9 @@ public  class JDBCConnection implements Connection {
 
     @Override
     public void close() throws SQLException {
-        if (isClosed())
+        if (isClosed()) {
             return;
-
+        }
         dbConnection.close();
         dbConnection = null;
     }
