@@ -143,13 +143,11 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
                     }catch (IOException e){
                         throw new SQLException(e);
                     }
-                }else{
-                    return 0;
+                    if(entity instanceof BasicTable){
+                        throw new SQLException("can not produces ResultSet");
+                    }
                 }
 
-                if(entity instanceof BasicTable){
-                    throw new SQLException("can not produces ResultSet");
-                }
                 return 0;
         }
     }
