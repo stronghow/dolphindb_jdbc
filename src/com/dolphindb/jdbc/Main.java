@@ -132,7 +132,7 @@ public class Main {
 
         //TestPreparedStatement(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1","delete from t1 where char = ?",new Object[]{'a'});
 
-        TestPreparedStatement(DB_URL_DFS,null,"select top 2 * from pt","insert into pt values(?, ?)",new Object[]{new YearMonth[]{YearMonth.parse("2000-01"),YearMonth.parse("2000-01")},new double[]{0.4,0.5}});
+        //TestPreparedStatement(DB_URL_DFS,null,"select top 2 * from pt","insert into pt values(?, ?)",new Object[]{new YearMonth[]{YearMonth.parse("2000-01"),YearMonth.parse("2000-01")},new double[]{0.4,0.5}});
 
         //TestPreparedStatement(DB_URL_DFS,null,"select top 2 * from pt","update pt set x = ? where month = ?",new Object[]{0.5, YearMonth.parse("2000-01")});
 
@@ -148,7 +148,7 @@ public class Main {
         //CreateTable(System.getProperty("user.dir").replaceAll("\\\\","/") + "/data/createTable_all.java",path_All,"t1");
 
 
-        //TestAutomaticSwitchingNode();
+        TestAutomaticSwitchingNode();
 
 
         //TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,false);
@@ -969,11 +969,11 @@ public class Main {
                 }
             }
 
-            rs = stmt.executeQuery("select * from pt");
-
-            rs.last();
-
-            System.out.println(rs.getRow());
+//            rs = stmt.executeQuery("select * from pt");
+//
+//            rs.last();
+//
+//            System.out.println(rs.getRow());
 
             if(rs != null) {
                 rs.close();
