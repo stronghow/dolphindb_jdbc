@@ -33,7 +33,6 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
         super(connection);
         this.connection = connection;
         this.preSql = sql.trim();
-
         String[] strings = preSql.split(";");
         if(strings.length == 0){
             throw new SQLException("SQL was empty");
@@ -41,11 +40,9 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
             throw new SQLException("check the SQL " + preSql);
         }
         this.preSql = strings[0];
-
         this.tableName = Utils.getTableName(sql);
         this.dml = Utils.getDml(sql);
         this.isInsert = this.dml == Utils.DML_INSERT;
-
         if(tableName != null){
             tableName = tableName.trim();
             switch (this.dml){
@@ -63,7 +60,6 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
                 }
             }
         }
-
         sqlSplit = this.preSql.split("\\?");
         values = new Object[sqlSplit.length+1];
         batch = new StringBuilder();
@@ -97,7 +93,6 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
                 return 0;
             }
         }
-
         switch (dml) {
             case Utils.DML_INSERT:
                 if (tableName != null) {
@@ -135,6 +130,7 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
                 }
             case Utils.DML_SELECT:
                 throw new SQLException("can not produces ResultSet");
+
             default:
                 Entity entity;
                 if(arguments instanceof String){
@@ -304,17 +300,17 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
 
     @Override
     public void setAsciiStream(int parameterIndex, InputStream inputStream, int length) throws SQLException{
-
-}
+        Driver.unused();
+    }
 
     @Override
     public void setUnicodeStream(int parameterIndex, InputStream inputStream, int length) throws SQLException{
-
+        Driver.unused();
     }
 
     @Override
     public void setBinaryStream(int parameterIndex, InputStream inputStream, int length) throws SQLException{
-
+        Driver.unused();
     }
 
     @Override

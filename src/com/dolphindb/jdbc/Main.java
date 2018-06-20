@@ -142,13 +142,13 @@ public class Main {
         //TestPreparedStatementInsert();
 
         //TestPreparedStatementBatch(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1","insert into t1 values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",o3);
-        //TestPreparedStatementBatch1(DB_URL,o3);
+        TestPreparedStatementBatch1(DB_URL,o3);
         //TestPreparedStatementBatch2(DB_URL,o3);
         //TestPreparedStatementBatch3(DB_URL_DFS,new Object[][]{new Object[]{YearMonth.parse("2000-01"), 0.5}});
         //CreateTable(System.getProperty("user.dir").replaceAll("\\\\","/") + "/data/createTable_all.java",path_All,"t1");
 
 
-        TestAutomaticSwitchingNode();
+        //TestAutomaticSwitchingNode();
 
 
 
