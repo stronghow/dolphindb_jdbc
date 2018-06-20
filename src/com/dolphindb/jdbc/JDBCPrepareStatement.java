@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
 import java.sql.Date;
+import java.text.MessageFormat;
 import java.util.*;
 
 public class JDBCPrepareStatement extends JDBCStatement implements PreparedStatement {
@@ -54,9 +55,19 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
 
         if(tableName != null){
             tableName = tableName.trim();
-            tableNameArg = new BasicString(tableName);
-            if(tableTypes == null){
-                tableTypes = new LinkedHashMap<>();
+            switch (this.dml){
+                case Utils.DML_SELECT:
+                case Utils.DML_INSERT:
+                case Utils.DML_DELETE:{
+                    if(tableName.length() > 0){
+                        tableNameArg = new BasicString(tableName);
+                        if(tableTypes == null){
+                            tableTypes = new LinkedHashMap<>();
+                        }
+                    }else{
+                        throw new SQLException("check the SQl " +preSql);
+                    }
+                }
             }
         }
 
@@ -330,6 +341,9 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
     @Override
     public void setObject(int parameterIndex, Object object) throws SQLException{
         super.checkClosed();
+        if(parameterIndex > sqlSplit.length - 1 ){
+            throw new SQLException(MessageFormat.format("Parameter index out of range ({0} > number of parameters, which is {1}).",parameterIndex,sqlSplit.length - 1 ));
+        }
         values[parameterIndex] = object;
     }
 
@@ -618,19 +632,27 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
             arguments.add(tableNameArg);
             for (int i = 1; i < sqlSplit.length; ++i) {
                 String s = TypeCast.TYPEINT2STRING.get(colType.get(i));
+                if(values[i] == null){
+                    throw new IOException("No value specified for parameter "+i);
+                }
                 arguments.add(TypeCast.java2db(values[i], s));
             }
             return arguments;
         }else{
-            return createSql();
+            try {
+                return createSql();
+            }catch (SQLException e){
+                throw new IOException(e.getMessage());
+            }
         }
     }
 
-
-
-    private String createSql(){
+    private String createSql() throws SQLException{
         StringBuilder sb = new StringBuilder();
         for(int i = 1; i< sqlSplit.length; ++i){
+            if(values[i] == null){
+                throw new SQLException("No value specified for parameter "+i);
+            }
             String s = TypeCast.castDbString(values[i]);
             if(s == null) return null;
             sb.append(sqlSplit[i-1]).append(s);
