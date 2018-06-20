@@ -13,8 +13,6 @@ public class JDBCStatement implements Statement {
 
     protected JDBCConnection connection;
     protected ResultSet resultSet;
-    protected String[] sqlSplit;
-    protected Object[] values;
     protected StringBuilder batch;
     protected Queue<Object> objectQueue;
     protected Object result;
@@ -173,8 +171,6 @@ public class JDBCStatement implements Statement {
     public void close() throws SQLException {
         checkClosed();
         isClosed = true;
-        sqlSplit = null;
-        values = null;
         batch = null;
         result = null;
         if(objectQueue != null){

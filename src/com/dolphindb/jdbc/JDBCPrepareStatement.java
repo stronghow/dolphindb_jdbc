@@ -16,23 +16,16 @@ import java.util.*;
 public class JDBCPrepareStatement extends JDBCStatement implements PreparedStatement {
 
     private String tableName;
-
     private Entity tableNameArg;
-
     private String preSql;
-
+    private String[] sqlSplit;
+    private Object[] values;
     private int dml;
-
     private Object arguments;
-
     private List<Object> argumentsBatch; //String List<Entity>
-
     private BasicTable tableDFS;
-
     private boolean isInsert;
-
     private String tableType;
-
     private HashMap<Integer,Integer> colType;
 
 
@@ -433,6 +426,16 @@ public class JDBCPrepareStatement extends JDBCStatement implements PreparedState
     @Override
     public void clearBatch() throws SQLException {
         super.clearBatch();
+        if(argumentsBatch != null){
+            argumentsBatch.clear();
+        }
+    }
+
+    @Override
+    public void close() throws SQLException {
+        super.close();
+        sqlSplit = null;
+        values = null;
     }
 
     @Override
