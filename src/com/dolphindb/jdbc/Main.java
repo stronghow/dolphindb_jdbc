@@ -25,7 +25,7 @@ public class Main {
 
     private static final String DB_URL1 = "jdbc:dolphindb://";
 
-    private static final String DB_URL_DFS = "jdbc:dolphindb://192.168.1.30:8501?databasePath=dfs://valuedb&partitionType=VALUE&partitionScheme=2000.01M..2016.12M";
+    private static final String DB_URL_DFS = "jdbc:dolphindb://192.168.1.30:8502?databasePath=dfs://valuedb&partitionType=VALUE&partitionScheme=2000.01M..2016.12M";
 
     private static final String DB_URL_DFS1 = "jdbc:dolphindb://192.168.1.30:8900?databasePath=dfs://rangedb&partitionType=RANGE&partitionScheme= 0 5 10&locations= [`rh8503, `rh8502`rh8504]";
 
@@ -149,6 +149,8 @@ public class Main {
 
 
         TestAutomaticSwitchingNode();
+
+
 
 
         //TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,false);
@@ -969,11 +971,15 @@ public class Main {
                 }
             }
 
-//            rs = stmt.executeQuery("select * from pt");
-//
-//            rs.last();
-//
-//            System.out.println(rs.getRow());
+            //stmt.execute("append!(pt, table(2000.01M as month, 0.1 as x)");
+
+            //stmt.execute("select count(*) from pt");
+
+            rs = stmt.executeQuery("select * from pt");
+
+            rs.last();
+
+            System.out.println(rs.getRow());
 
             if(rs != null) {
                 rs.close();

@@ -425,6 +425,7 @@ public  class JDBCConnection implements Connection {
             entity = this.dbConnection.run(function, arguments);
             return entity;
         }catch (IOException e){
+            String message = null;
             for (int index = 0 ; index<size; ++index){
                 String[] hostName_port = hostName_ports.get(index).split(":");
                 System.out.println("Select "+ hostName_port[0] + ":" + hostName_port[1]);
@@ -438,9 +439,14 @@ public  class JDBCConnection implements Connection {
                         return entity;
                     }
                 }catch (IOException e1){
+                    message = e1.getMessage();
                 }
             }
-            throw new IOException("All dataNode is death");
+            if(message != null){
+                throw new IOException(message + " or All dataNode is death");
+            }else{
+                throw new IOException("All dataNode is death");
+            }
         }
     }
 
@@ -458,9 +464,9 @@ public  class JDBCConnection implements Connection {
         Entity entity = null;
         try {
             entity = this.dbConnection.run(script);
-            System.out.println("run " + script + " " + this.dbConnection.getHostName() + ":" + this.dbConnection.getPort());
             return entity;
         }catch (IOException e){
+            String message = null;
             for (int index = 0 ; index<size; ++index){
                 String[] hostName_port = hostName_ports.get(index).split(":");
                 System.out.println("Select "+ hostName_port[0] + ":" + hostName_port[1]);
@@ -474,9 +480,14 @@ public  class JDBCConnection implements Connection {
                         return entity;
                     }
                 }catch (IOException e1){
+                    message = e1.getMessage();
                 }
             }
-            throw new IOException("All dataNode is death");
+            if(message != null){
+                throw new IOException(message + " or All dataNode is death");
+            }else{
+                throw new IOException("All dataNode is death");
+            }
         }
     }
 
