@@ -10,7 +10,10 @@ import com.xxdb.data.Vector;
 import java.io.IOException;
 import java.sql.*;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.Executor;
 
 public  class JDBCConnection implements Connection {
@@ -61,12 +64,7 @@ public  class JDBCConnection implements Connection {
             sqlSb.append(sb);
             sb.append("getTables(").append(Driver.DB).append(")");
             databases = (Vector) dbConnection.run(sb.toString());
-            String controllerAlias = dbConnection.run("getControllerAlias()").getString();
-            if(controllerAlias == null || controllerAlias.length() == 0){
-                isDFS = false;
-            }else{
-                isDFS = true;
-            }
+
             if(values[0].trim().startsWith("\"dfs://")) {
                 isDFS = true;
                 StringBuilder loadTableSb = new StringBuilder();
@@ -80,7 +78,9 @@ public  class JDBCConnection implements Connection {
                 dbConnection.run(sql);
             }
 
-            if(isDFS) {
+            String controllerAlias = dbConnection.run("getControllerAlias()").getString();
+            if(controllerAlias != null && controllerAlias.length() > 0){
+                isDFS = true;
                 String controlHost = dbConnection.run("rpc(\""+controllerAlias+"\", getNodeHost)").getString();
                 int controlPort = ((BasicInt) dbConnection.run("rpc(\""+controllerAlias+"\", getNodePort)")).getInt();
                 controlConnection = new DBConnection();
@@ -91,6 +91,8 @@ public  class JDBCConnection implements Connection {
                 for (int i = 0, len = siteVector.rows(); i < len; i++) {
                     hostName_ports.add(siteVector.get(i).getString());
                 }
+            }else{
+                isDFS = false;
             }
         }
     }
