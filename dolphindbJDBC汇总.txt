@@ -1,0 +1,31 @@
+1. pt 是分布式上的一张分区表, t是要插入的一张表,在Java中 通过 run("append!",arguments) 进行 append!(pt,t) 时,无法表示 pt
+
+2. 自动切换节点问题,  会话间识别不了各自的对象
+   解决方案一: 通过 share 共享, 又因为只能 share in-memory table or segmented table, 也无法解决
+               分区表问题. (已测试)
+   解决方案二: 切换节点后,重新执行 已经执行过的语句 (未测试)
+
+3. 数据类型转换   不允许用户用 array, list 装载 scalar, 会抛异常,
+                基本类型会转换为对应的scalar, 比如 int => BasicInt, 如果底层是 BasicBoolean 也只转换为 BasicInt
+                String 类型只能转为 BasicString , 否则抛异常
+                时间类型会根据底层转换, 如底层是BasicMonth, 则会 Time => BasicMonth
+                array, list 会转换为 Vector 
+
+4. 增删改需要通过  Statement 和 prepareStatement 执行 SQL语句
+
+5. 如果是给出了dfs://分布式上的数据库, 会预先loadTable, 否则只给 dataNode 的 IP 和 PORT,不会 loadTable
+
+6. SQL语句不支持分页, 所以可以全部查找后通过 resultSet 的游标进行查看
+
+7. 客户端是通过Connect(host,port)出现异常来自动切换下一节点, 但是集群可能还会把任务分发给挂掉的节点
+
+8. 不支持存储过程
+
+9. 只支持 bool byte char short int long float double String
+         bool[] byte[] char[] short[] int[] long[] float[] double[] String[]
+         List Date Time Timestamp YearMoth LocalDate LocalTime LocalDateTime
+         Object[] List  Scalar Vector
+   的类型转换
+
+
+

@@ -1,0 +1,33 @@
+已完成:
+1. 已经完成内存表的增删改查
+2. PrepareStatement 的 insert into 语句会根据表的数据类型自动转换,并通过相应的二进制形式插入数据
+   update delete select 语句不会自动转换, 通过字符串的形式执行 
+3. PrepareStatement 完成 批处理
+4. 对于可以传入参数的 insert into 语句, 如果是内存表会返回 tableInsert 函数的返回值(即插入行数),
+   如果是分区表, 执行 append! 函数, 会返回 Vector 的行数, 但是由于在JDBC无法表示分区表,所以实际插入不成功
+   但是直接 insert into pt values(2000.01M,0.4) 会转换为 append!( pt ,table(2000.01M as col1,0.4 as col2))
+   这是可以执行成功的
+5. 对于 update delete 语句 , 会返回 SUCCESS_NO_INFO(-2) JDBC定义的值.
+6. 对于内存表还是分区表的识别不是通过 dfs 来区分, 而是从sql语句中解析出 tableName ,再通过执行 typeStr tableName 进行识别
+7. ResultSet只能查看, 不能修改
+8. 如果创建Connect时给出URL中给出了 dfs:// 则会预先loadTable, 否则不会
+9. 对于是否可以自动切换节点的策略为: 预先执行 getControllerAlias(), 如果返回值不是空字符串,
+   或者给出了dfs://路径, 则判定为集群, 然后执行 rpc(controllerAlias, getClusterChunkNodesStatus)
+   获取所有dataNote并存起来;否则不做处理.
+10. 自动切换节点后的找不到对象的解决策略为:  把所有赋值语句都预先存到 StringBuilder 中, 切换节点后会重新执行赋值语句.
+11. 增加 DML sql 语句的正则表达式判断
+12. 增加 赋值语句 的正则表达式判断
+13. 增加 控制节点的DBConnection
+
+
+
+需要做:
+1. 自动切换节点, 切换节点后需要把以前执行过的sql语句重新执行一遍, 这个有待商榷
+2. 异常的抛出信息不够明确,需要优化
+3. resultSet没有做分区表的append!操作
+4. 权限控制
+5. 对空值未做处理
+6. TypeTest需要优化
+
+
+

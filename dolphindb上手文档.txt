@@ -1,0 +1,102 @@
+1. 项目地址: https://github.com/stronghow/dolphindb_jdbc.git
+    Test目录下的test是测试类
+
+2. 集群上创建的分区表语句
+
+    n=1000
+
+    month=take(2000.01M..2016.12M, n);
+
+    x=rand(1.0, n);
+
+    t=table(month, x)
+
+    db=database("dfs://valuedb", VALUE, 2000.01M..2016.12M)
+
+    pt = db.createPartitionedTable(t, `pt, `month)
+
+    pt.append!(t);
+
+    pt=loadTable(db,`pt)
+
+    select count(x) from pt;
+
+3. 执行 CreateTable(System.getProperty("user.dir")+"/data/createTable_all.java",path_All,"t1")
+    会在项目的data/dballdata 目录创建一个t1表
+
+4. 测试内存表
+
+    TestPreparedStatement(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1","insert into t1 values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",o4);
+
+    TestPreparedStatement(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1","update t1 set bool = ? where char = ?",new Object[]{false, 'a'});
+
+    TestPreparedStatement(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1","delete from t1 where char = ?",new Object[]{'a'});
+
+    是测试内存表的增删改
+
+5. 修改test类下的 DB_URL_DFS 改为你搭建的集群的ip和port
+
+    TestPreparedStatement(DB_URL_DFS,null,"select top 2 * from pt","insert into pt values(?, ?)",new Object[]{new YearMonth[]{YearMonth.parse("2000-01"),YearMonth.parse("2000-01")},new double[]{0.4,0.5}});
+
+    TestPreparedStatement(DB_URL_DFS,null,"select top 2 * from pt","update pt set x = ? where month = ?",new Object[]{0.5, YearMonth.parse("2000-01")});
+
+    TestPreparedStatement(DB_URL_DFS,null,"select top 2 * from pt","delete from pt where x = ?",new Object[]{YearMonth.parse("2000-01")});
+
+    是测试分区表的增删改
+
+6. 测试批处理的正常和错误操作
+
+    TestPreparedStatementBatch(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1","insert into t1 values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",o3);
+
+    TestPreparedStatementBatch1(DB_URL,o3);
+
+    TestPreparedStatementBatch2(DB_URL,o3);
+
+    TestPreparedStatementBatch3(DB_URL_DFS,new Object[][]{new Object[]{YearMonth.parse("2000-01"), 0.5}});
+
+7. 测试节点的自动切换
+
+	TestAutomaticSwitchingNode(10000); //先连上一个节点,再把该节点关闭,大概10秒后进行节点切换
+
+8. 测试resultSet
+
+    TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,false);
+    TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,true);
+
+    TestResultSetInsert(DB_URL,"t1 = loadTable(system_db,`t1)","select bool,char from ej(t1, t1, `bool)",new Object[]{true,'a'},true);
+
+    TestResultSetUpdate(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,false);
+    TestResultSetUpdate(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",o1,true);
+
+    TestResultSetDelete(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",2,false);
+    TestResultSetDelete(DB_URL,"t1 = loadTable(system_db,`t1)","select * from t1",2,true);
+
+
+    TestResultSetInsert(DB_URL_DFS,"pt = loadTable(system_db,`pt)","select top 10 * from pt",new Object[]{new BasicMonth(YearMonth.parse("2016-07")),0.007},true);
+
+    TestResultSetUpdate(DB_URL_DFS,"pt = loadTable(system_db,`pt)","select top 10 * from pt",new Object[]{new BasicMonth(YearMonth.parse("2016-07")),0.007},true);
+
+    TestResultSetDelete(DB_URL_DFS,"pt = loadTable(system_db,`pt)","select top 10 * from pt",1,true);
+
+    是测试不允许ResultSet的任何修改,只能查看
+
+9. 测试Java类型向dolphindb类型的转换
+   
+	TestTypeCast(int)    // int 为 0-7
+
+10. 测试DatabaseMetaData
+
+    TestDatabaseMetaData(DB_URL1,"");
+
+
+
+   
+
+
+        
+ 
+  
+
+
+
+
