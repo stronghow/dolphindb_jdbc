@@ -38,13 +38,13 @@ public  class JDBCConnection implements Connection {
         port = Integer.parseInt(prop.getProperty("port"));
         try {
             open(hostName,port,prop);
-        }catch (Exception e){
+        }catch (IOException e){
             e.printStackTrace();
             String s = e.getMessage();
             if(s.contains("Connection refused")){
                 throw new SQLException(MessageFormat.format("{0}  ==> hostName = {1}, port = {2}",s,hostName,port));
             }else{
-                throw new SQLException(s);
+                throw new SQLException(e);
             }
 
         }

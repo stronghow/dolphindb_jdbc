@@ -5,6 +5,7 @@ import com.xxdb.data.BasicStringVector;
 import com.xxdb.data.BasicTable;
 import com.xxdb.data.Vector;
 
+import java.io.IOException;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.List;
@@ -456,7 +457,7 @@ public class JDBCDataBaseMetaData implements DatabaseMetaData {
                 }
                 sb.delete(sb.length()-",".length(),sb.length());
                 STRINGFUNCTIONS = sb.toString();
-            }catch (Exception e){
+            }catch (IOException e){
                 e.printStackTrace();
             }
         }

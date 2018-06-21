@@ -407,7 +407,7 @@ public class JDBCStatement implements Statement {
             }
             batch.delete(0,batch.length());
             return arr_int;
-        }catch (Exception e){
+        }catch (SQLException e){
             batch.delete(0,batch.length());
             throw new BatchUpdateException(e.getMessage(),Arrays.copyOf(arr_int,index));
         }
