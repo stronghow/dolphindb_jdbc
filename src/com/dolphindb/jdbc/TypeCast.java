@@ -210,7 +210,10 @@ public class TypeCast {
         if(castEntity != null) return castEntity;
         castEntity = basicTypeCast(srcValue,targetEntityClassName);
         if(castEntity != null) return castEntity;
-        throw new IOException("only support bool byte char short int long float double Object[] List Date Time Timestamp YearMoth LocalDate LocalTime LocalDateTime Scalar Vector");
+        throw new IOException("bool byte char short int long float double String\n" +
+                "         bool[] byte[] char[] short[] int[] long[] float[] double[] String[]\n" +
+                "         List Date Time Timestamp YearMoth LocalDate LocalTime LocalDateTime\n" +
+                "         Object[] List  Scalar Vector");
     }
 
     public static Entity dateTimeCast(Object srcValue, String targetEntityClassName) throws Exception{
