@@ -264,8 +264,9 @@ public class JDBCStatement implements Statement {
             case Utils.DML_SELECT: {
                 ResultSet resultSet_ = executeQuery(sql);
                 resultSets.offerLast(resultSet_);
-                objectQueue.offer(executeQuery(sql));
+                objectQueue.offer(resultSet_);
             }
+                break;
             case Utils.DML_INSERT:
             case Utils.DML_UPDATE:
             case Utils.DML_DELETE:

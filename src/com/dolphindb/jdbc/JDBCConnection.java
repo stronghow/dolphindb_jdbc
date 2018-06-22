@@ -63,11 +63,11 @@ public  class JDBCConnection implements Connection {
             sb.append(");\n");
             sqlSb = new StringBuilder();
             sqlSb.append(sb);
-            sb.append("getTables(").append(Driver.DB).append(")");
-            databases = (Vector) dbConnection.run(sb.toString());
+            dbConnection.run(sb.toString());
 
             if(values[0].trim().startsWith("\"dfs://")) {
                 isDFS = true;
+                databases = (Vector) dbConnection.run("getTables("+Driver.DB+")");
                 StringBuilder loadTableSb = new StringBuilder();
                 for (int i = 0, len = databases.rows(); i < len; ++i) {
                     String name = databases.get(i).getString();

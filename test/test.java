@@ -176,6 +176,7 @@ class test{
 
         //TestDatabaseMetaData(DB_URL1,"");
 
+        //TestStatementExecute(DB_URL,new String[]{"t1 = loadTable(system_db, `t1)","select * from t1"});
     }
 
     public static void CreateTable(String file,String savePath,String tableName){
@@ -202,7 +203,7 @@ class test{
 
 
 
-    public static void TestStatementExecute(String url,String sql) throws Exception{
+    public static void TestStatementExecute(String url,String[] sql) throws Exception{
         System.out.println("TestStatementExecute begin");
         Connection conn = null;
         Statement stmt = null;
@@ -212,31 +213,34 @@ class test{
             stmt = conn.createStatement();
             ResultSet rs = null;
             int UpdateCount = -1;
-            if(stmt.execute(sql)){
-                rs = stmt.getResultSet();
-                printData(rs);
-            }else {
-                UpdateCount =  stmt.getUpdateCount();
-                if(UpdateCount != -1) {
-                    System.out.println(UpdateCount + " row affected");
-                }
-            }
-            while (true){
-                if(stmt.getMoreResults()){
-                    rs =  stmt.getResultSet();
+            for(String s : sql){
+                if(stmt.execute(s)){
+                    rs = stmt.getResultSet();
                     printData(rs);
-                }else{
+                }else {
                     UpdateCount =  stmt.getUpdateCount();
                     if(UpdateCount != -1) {
-                        System.out.println(UpdateCount + "row affected");
-                    }else{
-                        break;
+                        System.out.println(UpdateCount + " row affected");
                     }
                 }
+                while (true){
+                    if(stmt.getMoreResults()){
+                        rs =  stmt.getResultSet();
+                        printData(rs);
+                    }else{
+                        UpdateCount =  stmt.getUpdateCount();
+                        if(UpdateCount != -1) {
+                            System.out.println(UpdateCount + "row affected");
+                        }else{
+                            break;
+                        }
+                    }
+                }
+                if(rs != null) {
+                    rs.close();
+                }
             }
-            if(rs != null) {
-                rs.close();
-            }
+
             stmt.close();
             conn.close();
         }catch(Exception e){
@@ -666,7 +670,7 @@ class test{
     }
 
     public static void TestDatabaseMetaData(String url,String sql) throws Exception{
-        System.out.println("TestStatementExecute begin");
+        System.out.println("TestDatabaseMetaData begin");
         Connection conn = null;
         Statement stmt = null;
         try{
@@ -723,7 +727,7 @@ class test{
                 se.printStackTrace();
             }
         }
-        System.out.println("TestStatementExecute end");
+        System.out.println("TestDatabaseMetaData end");
     }
 
     public static void printData(ResultSet rs) throws SQLException{

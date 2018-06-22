@@ -88,6 +88,11 @@
 
     TestDatabaseMetaData(DB_URL1,"");
 
+11. 测试StatementExecute
+
+    TestStatementExecute(DB_URL,new String[]{"t1 = loadTable(system_db, `t1)","select * from t1"});
+
+
 
 
    
